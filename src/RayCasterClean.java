@@ -4,10 +4,10 @@
 * Joshua Sim : 22004867
 * Johnny Chadwick-Watt: 23003660
 *
-* Last Update: 12/05/2025 (Johnny)
-* - Changed movement controls from arrow keys to WASD
-* - Left and Right controls now strafe left and right. Mouse Movement for First Person view rotation
-* - Add basic Player-Wall Collision
+* Last Update: 13/05/2025 (Johnny)
+* - Add basic Health and Damage/Recovery Logic
+* - Press M to simulate health damage (-10 HP)
+* - Wine bottle and Chicken Leg to demonstrate Health Items
 */
 
 import javax.swing.*;
@@ -15,6 +15,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.List;
 
 public class RayCasterClean extends GameEngine implements MouseMotionListener{
 
@@ -52,6 +53,11 @@ public class RayCasterClean extends GameEngine implements MouseMotionListener{
         boolean surfaceLight[] = new boolean[numOfRays]; //indicator of north south, or east west facing
         //these could all be made in it's own object really.
 
+        int maxHealth = 100;
+        int health;
+
+
+
         //constructor for object
         public PlayerObject(){
             this.init();
@@ -73,6 +79,22 @@ public class RayCasterClean extends GameEngine implements MouseMotionListener{
             //initialise object speed and velocity
             speed = 64;
 
+            //initialise health
+            health = maxHealth;
+
+        }
+
+        public void takeDamage(int amount){
+            health -= amount;
+            if(health <= 0){
+                health = 0;
+                RayCasterClean.this.isGameOver = true;
+            }
+        }
+
+        //Retrieves health as a percentage. Can adjust later
+        public int getHealth(){
+            return (int) ((health/(double) maxHealth)*100);
         }
 
         //update method of object
@@ -319,8 +341,62 @@ public class RayCasterClean extends GameEngine implements MouseMotionListener{
                 lineX +=8;
             }
 
+            // Render health items in the raycasting view
+            for (HealthItem item : RayCasterClean.this.healthItems) {
+                // Calculate the vector from player to item
+                double dx = item.posX -posX;
+                double dy = item.posY - posY;
+
+                // Calculate the angle to the item in degrees
+                double itemAngle = Math.toDegrees(Math.atan2(dy, dx));
+
+                // Calculate the angle difference from the player's direction
+                double deltaAngle = itemAngle -angle;
+                if (deltaAngle > 180) deltaAngle -= 360;
+                if (deltaAngle < -180) deltaAngle += 360;
+                if (Math.abs(deltaAngle) > 32) continue;
+                double dist = Math.sqrt(dx * dx + dy * dy);
+                int rayIndex = (int)(32 + deltaAngle);
+                if (rayIndex < 0 || rayIndex >= 64) continue;
+
+                // Check if the item is in front of the wall for this ray
+                if (dist < distT[rayIndex]) {
+                    double screenX = width() / 2 + (deltaAngle + 32) * 8;
+
+                    // Calculate the projecte size based on distance
+                    double projectionFactor = 320 / dist;
+                    double spriteW = 16 * projectionFactor;
+                    double spriteH = 16 * projectionFactor;
+                    double drawX = screenX - spriteW / 2;
+                    double drawY = height() / 2 - spriteH / 2;
+
+                    // Draw the sprite in the raycasting view
+                    drawImage(item.sprite, drawX, drawY, spriteW, spriteH);
+                }
+            }
+
         }
 
+    }
+
+
+    public class HealthItem{
+        double posX, posY;
+        Image sprite;
+        int healthRestore; // Amount of health points
+
+        public HealthItem(double x, double y, String spritePath, int restore){
+            this.posX = x;
+            this.posY = y;
+            this.sprite = loadImage(spritePath);
+            this.healthRestore = restore;
+        }
+
+        public void draw(){
+            if(sprite != null){
+                drawImage(sprite, posX, posY, 16, 16);
+            }
+        }
     }
 
     //class for a wall
@@ -419,6 +495,7 @@ public class RayCasterClean extends GameEngine implements MouseMotionListener{
     private ArrayList<WallBlock> wallBlocks;
     private WallBlock sampleWallBlock;
     private PlayerObject playerObject;
+    private ArrayList<HealthItem> healthItems;
 
     // declare boolean flags
     private boolean isGameOver;
@@ -478,6 +555,11 @@ public class RayCasterClean extends GameEngine implements MouseMotionListener{
         keyRight = false;
         keyDown = false;
         keyLeft = false;
+
+        //initialise health items
+        healthItems = new ArrayList<>();
+        healthItems.add(new HealthItem(150, 428, "assets/visual/Wine.png", 20));      // Wine restore 1/5 of maxHealth (20/100)
+        healthItems.add(new HealthItem(250, 128, "assets/visual/ChickenLeg.png", 100)); // Chicken Leg restores 100% (100/100)
     }
 
     // -------------------------------------------
@@ -497,10 +579,18 @@ public class RayCasterClean extends GameEngine implements MouseMotionListener{
             //     wallBlock.update(dt);
             // }
             playerObject.update(dt);
-
-
+            List<HealthItem> itemsToRemove = new ArrayList<>();
+            for (HealthItem item : healthItems) {
+                if (collisionPoint(item.posX, item.posY, 16, 16, playerObject.posX, playerObject.posY)) {
+                    playerObject.health += item.healthRestore;
+                    if (playerObject.health > playerObject.maxHealth) {
+                        playerObject.health = playerObject.maxHealth;
+                    }
+                    itemsToRemove.add(item);
+                }
+            }
+            healthItems.removeAll(itemsToRemove);
         }
-
     }
 
     // -------------------------------------------
@@ -514,12 +604,25 @@ public class RayCasterClean extends GameEngine implements MouseMotionListener{
         changeBackgroundColor(black);
         clearBackground(width(), height());
 
-        // draw objects
-        for (WallBlock wallBlock : wallBlocks) {
-            wallBlock.draw();
-        }
-        playerObject.draw();
+        if (isGameOver) {
+            changeColor(white);
+            drawText(width() / 2 - 100, height() / 2, "Game Over");
+            drawText(width() / 2 - 150, height() / 2 + 50, "Press Space to Restart");
+        } else {
+            // Draw game objects only if the game is not over
+            for (WallBlock wallBlock : wallBlocks) {
+                wallBlock.draw();
+            }
+            for (HealthItem item : healthItems) {
+                item.draw();
+            }
+            playerObject.draw();
 
+            // Draw health text under the raycaster view
+            changeColor(red);
+            String health = "Health: " + playerObject.getHealth() + "%";
+            drawText(width() / 2 + 10, height() - 20, health);
+        }
     }
 
     // -------------------------------------------
@@ -546,73 +649,89 @@ public class RayCasterClean extends GameEngine implements MouseMotionListener{
 
     // Method for when key is pressed
     public void keyPressed(KeyEvent e) {
-        // The user pressed left arrow key...
-        if (e.getKeyCode() == KeyEvent.VK_A) {
-            // ...then record input
-            keyLeft = true;
-        }
-        // The user pressed right arrow key
-        if (e.getKeyCode() == KeyEvent.VK_D) {
-            keyRight = true;
-        }
-        // The user pressed up arrow key
-        if (e.getKeyCode() == KeyEvent.VK_W) {
-            keyUp = true;
-        }
-        // The user pressed down arrow key
-        if (e.getKeyCode() == KeyEvent.VK_S) {
-            keyDown = true;
+        if(isGameOver) {
+            if(e.getKeyCode() == KeyEvent.VK_SPACE) {
+                init();
+                isGameOver = false;
+            }
+        }else{
+            // The user pressed left arrow key...
+            if (e.getKeyCode() == KeyEvent.VK_A) {
+                // ...then record input
+                keyLeft = true;
+            }
+            // The user pressed right arrow key
+            if (e.getKeyCode() == KeyEvent.VK_D) {
+                keyRight = true;
+            }
+            // The user pressed up arrow key
+            if (e.getKeyCode() == KeyEvent.VK_W) {
+                keyUp = true;
+            }
+            // The user pressed down arrow key
+            if (e.getKeyCode() == KeyEvent.VK_S) {
+                keyDown = true;
+            }
+
+            //Temp Key to test damage (press "M" for 10 damage)
+            if (e.getKeyCode() == KeyEvent.VK_M) {
+                playerObject.takeDamage(10);
+            }
         }
     }
 
     // Method for when key is released
     public void keyReleased(KeyEvent e) {
-        // The user releases left arrow key
-        if (e.getKeyCode() == KeyEvent.VK_A) {
-            //...then record lack of input
-            keyLeft = false;
-        }
-        // The user releases right arrow key
-        if (e.getKeyCode() == KeyEvent.VK_D) {
-            keyRight = false;
-        }
-        // The user releases up arrow key
-        if (e.getKeyCode() == KeyEvent.VK_W) {
-            keyUp = false;
-        }
-        // The user releases down arrow key
-        if (e.getKeyCode() == KeyEvent.VK_S) {
-            keyDown = false;
+        if(!isGameOver) {
+            // The user releases left arrow key
+            if (e.getKeyCode() == KeyEvent.VK_A) {
+                //...then record lack of input
+                keyLeft = false;
+            }
+            // The user releases right arrow key
+            if (e.getKeyCode() == KeyEvent.VK_D) {
+                keyRight = false;
+            }
+            // The user releases up arrow key
+            if (e.getKeyCode() == KeyEvent.VK_W) {
+                keyUp = false;
+            }
+            // The user releases down arrow key
+            if (e.getKeyCode() == KeyEvent.VK_S) {
+                keyDown = false;
+            }
         }
     }
 
     // -- Mouse Movements --
     @Override
     public void mouseMoved(MouseEvent e) {
-        if (playerObject == null) {
-            return;
-        }
-        int centerX = width() / 2; // Window center X
-        int centerY = height() / 2; // Window center Y
-        int mouseX = e.getX();
-        double sensitivity = 0.1;
+        if(!isGameOver){
+            if (playerObject == null) {
+                return;
+            }
+            int centerX = width() / 2; // Window center X
+            int centerY = height() / 2; // Window center Y
+            int mouseX = e.getX();
+            double sensitivity = 0.1;
 
-        int deltaX = mouseX - centerX;
-        playerObject.angle += deltaX * sensitivity;
+            int deltaX = mouseX - centerX;
+            playerObject.angle += deltaX * sensitivity;
 
-        if (playerObject.angle < 0) {
-            playerObject.angle += 360;
-        } else if (playerObject.angle >= 360) {
-            playerObject.angle -= 360;
-        }
+            if (playerObject.angle < 0) {
+                playerObject.angle += 360;
+            } else if (playerObject.angle >= 360) {
+                playerObject.angle -= 360;
+            }
 
-        // Reset cursor to center
-        try {
-            Robot robot = new Robot();
-            Point panelLocation = mPanel.getLocationOnScreen();
-            robot.mouseMove(panelLocation.x + centerX, panelLocation.y + centerY);
-        } catch (AWTException ex) {
-            ex.printStackTrace();
+            // Reset cursor to center
+            try {
+                Robot robot = new Robot();
+                Point panelLocation = mPanel.getLocationOnScreen();
+                robot.mouseMove(panelLocation.x + centerX, panelLocation.y + centerY);
+            } catch (AWTException ex) {
+                ex.printStackTrace();
+            }
         }
     }
     @Override

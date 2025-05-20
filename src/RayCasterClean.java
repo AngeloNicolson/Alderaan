@@ -27,17 +27,20 @@ public class RayCasterClean extends GameEngine {
         double angle; //angle of the object
 
         //declare fields for ray
-        private final int numOfRays = (int) tileSquareSize; //max number of rays, if tile size is 64, that's the number of rays
+        private final int NUMOFRAYS = 128; //just going to fix the number of rays at 128
         int ray, depthOfField; //ray is the index of the ray
         double rayAngleNow; //ray angle currently
         //there are two intermediate rays, horizontal checking rays and vertical checking rays
         double rayHX, rayHY, offsetHX, offsetHY, distH; //horizontal checking ray variables
         double rayVX, rayVY, offsetVX, offsetVY, distV; //vertical checking ray variables
-        double rayX[] = new double[numOfRays]; //array of final ray's X and Y end coordinates
-        double rayY[] = new double[numOfRays];
-        double distT[] = new double[numOfRays]; //array of final ray's length
-        double rayAngle[] = new double[numOfRays]; //array of final ray's angle
-        boolean surfaceLight[] = new boolean[numOfRays]; //indicator of north south, or east west facing
+        double rayX[] = new double[NUMOFRAYS]; //array of final ray's X and Y end coordinates
+        double rayY[] = new double[NUMOFRAYS];
+        double distT[] = new double[NUMOFRAYS]; //array of final ray's length
+        double rayAngle[] = new double[NUMOFRAYS]; //array of final ray's angle
+        boolean isVerticalSurface[] = new boolean[NUMOFRAYS]; //indicator of north south, or east west facing
+        Image imageWallSegment [] = new Image[NUMOFRAYS]; //array of wall segment to draw
+        double displayLineThickness = 512/NUMOFRAYS;
+        int wallImageX; //the x coordinate of the ray on the wall image
         //these could all be made in it's own object really.
 
         //constructor for object
@@ -92,8 +95,8 @@ public class RayCasterClean extends GameEngine {
             //note: 'origin' point is set facing dead right, like in a textbook
 
             //--Ray Checking--
-            rayAngleNow = angle - (numOfRays/2); //set first ray angle to left of player angle 
-            for (ray = 0; ray < numOfRays; ray++){ //loop thru all rays to check
+            rayAngleNow = angle - (NUMOFRAYS/ (NUMOFRAYS/32)); //set first ray angle to left of player angle 
+            for (ray = 0; ray < NUMOFRAYS; ray++){ //loop thru all rays to check
 
                 //offset the negative angles back to 0 - 360 range
                 if (rayAngleNow < 0) {
@@ -212,19 +215,42 @@ public class RayCasterClean extends GameEngine {
                 //finish checking vertical rays
 
                 //check both rays and use the shortest for the final ray, plus input ray info
-                if (distH < distV) {
+                if (distH < distV) { //this indicates a horizontal wall
                     rayX[ray] = rayHX;
                     rayY[ray] = rayHY;
                     distT[ray] = distH;
-                    surfaceLight[ray] = false;
-                } else if (distV < distH) {
+                    isVerticalSurface[ray] = false;
+                    //pinpoint where the ray intercepts the wall to determine wall texture
+                    wallImageX = (int) ((rayX[ray]%64)/64 * 128 - 2);
+                    if (wallImageX<0) {
+                        wallImageX = 0;
+                    } else if (wallImageX>128) {
+                        wallImageX = 128;
+                    } else if (wallImageX + (int)displayLineThickness > 128) {
+                        wallImageX = 128 - (int)displayLineThickness;
+                    }
+                    //add wall subimage to the array
+                    imageWallSegment[ray] = subImage(imageTestWall, wallImageX, 0,(int)displayLineThickness, 128);
+                } else if (distV < distH) { //this indicates a vertical wall
                     rayX[ray] = rayVX;
                     rayY[ray] = rayVY;
                     distT[ray] = distV;
-                    surfaceLight[ray] = true;
+                    isVerticalSurface[ray] = true;
+                    //pinpoint where the ray intercepts the wall to determine wall texture
+                    wallImageX = (int) ((rayY[ray]%64)/64 * 128 - displayLineThickness/2);
+                    if (wallImageX<0) {
+                        wallImageX = 0;
+                    } else if (wallImageX>128) {
+                        wallImageX = 128;
+                    } else if (wallImageX + displayLineThickness > 128) {
+                        wallImageX = 128 - (int)displayLineThickness;
+                    }
+                    //add wall subimage to the array
+                    imageWallSegment[ray] = subImage(imageTestWall, wallImageX, 0,(int)displayLineThickness, 128);
                 }
                 // increament ray angle for the next ray
-                rayAngleNow++;
+                rayAngleNow += (64.0/NUMOFRAYS);
+                //System.out.println("DEBUG: rayAngleNow: " + rayAngleNow);
 
             } //finish looking thru all rays
             
@@ -252,11 +278,11 @@ public class RayCasterClean extends GameEngine {
             //initialise the vertical line height on the right side display
             double lineH = 320; //defaulted the max line height to be 320 at the moment
             //initialise the right side vertical line X coord as the left most point on the right side 
-            //(+4 because the vertical lines are set to 8 thickness for now)
-            double lineX = width() / 2 + 4;
+            double lineX = width() / 2 ;
+            
             
             //draw ray line
-            for (ray = 0; ray < numOfRays; ray++) { //for each ray
+            for (ray = 0; ray < NUMOFRAYS; ray++) { //for each ray
                 //change colour to red
                 changeColor(red);
                 //draw the ray from player to closest collided wall
@@ -267,20 +293,13 @@ public class RayCasterClean extends GameEngine {
                 distT[ray] = distT[ray] * cos(rayAngle[ray] - angle);
                 //based on ray length, workout the length of vertical line on the rightside display
                 lineH = (tileSquareSize * 320) / distT[ray];
-                //limit the max height of the vertical lines on the right side
-                if (lineH > 320) {
-                    lineH = 320;
-                }
-                //change the colour of the surface based on whether it's facing NS facing wall or EW facing wall
-                if (surfaceLight[ray]) { //if it's a north south facing wall...
-                    changeColor(new Color(255,0,0)); //...make it s strong red
-                } else { //else it's a east west facing wall...
-                    changeColor(new Color(200, 0,0)); //...make it a pale red
-                }
+                // //limit the max height of the vertical lines on the right side
+                //draw the textured wall
+                drawImage(imageWallSegment[ray], lineX, height()/2 - lineH/2, (int)displayLineThickness, lineH);
                 //draw the line on the rightside display
-                drawLine(lineX, height()/2 - lineH/2, lineX, height()/2 + lineH/2, 8);
+                //drawLine(lineX, height()/2 - lineH/2, lineX, height()/2 + lineH/2, lineThickness);
                 //move the line origin to the right for the next ray
-                lineX +=8;
+                lineX += displayLineThickness;
             }
             
         }
@@ -387,6 +406,9 @@ public class RayCasterClean extends GameEngine {
     // declare boolean flags
     private boolean isGameOver;
 
+    // declare game assets
+    private Image imageTestWall;
+
     // declare fields for input
     private boolean keyUp, keyRight, keyDown, keyLeft; // directional key inputs
 
@@ -423,8 +445,11 @@ public class RayCasterClean extends GameEngine {
                 }
             }
         }
-        //player object
+        // initialise player object
         playerObject = new PlayerObject();
+
+        // initalise game assets
+        imageTestWall = loadImage("assets/visual/TestWall.png");
 
         // initialise the input fields:
         keyUp = false; //all the keys are not pressed to start with

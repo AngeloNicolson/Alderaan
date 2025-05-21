@@ -29,7 +29,7 @@ public class RayCasterClean extends GameEngine {
         double angle; //angle of the object
 
         //declare fields for ray
-        private final int NUMOFRAYS = 128; //just going to fix the number of rays at 128
+        private final int NUMOFRAYS = 512; //just going to fix the number of rays at 128
         int ray, depthOfField; //ray is the index of the ray
         double rayAngleNow; //ray angle currently
         //there are two intermediate rays, horizontal checking rays and vertical checking rays
@@ -255,7 +255,7 @@ public class RayCasterClean extends GameEngine {
                     isVerticalSurface[ray] = false;
                     //pinpoint where the ray intercepts the wall to determine wall texture
                     wallImageX = (int) ((rayX[ray]%64)/64 * 128 - 2);
-                    if (wallImageX<0) {
+                    if (wallImageX<0) { //checks to make sure the value is in range
                         wallImageX = 0;
                     } else if (wallImageX>128) {
                         wallImageX = 128;
@@ -263,7 +263,7 @@ public class RayCasterClean extends GameEngine {
                         wallImageX = 128 - (int)displayLineThickness;
                     }
                     //add wall subimage to the array
-                    imageWallSegment[ray] = subImage(imageTestWall, wallImageX, 0,(int)displayLineThickness, 128);
+                    imageWallSegment[ray] = imageTestWallStrips[wallImageX];
                 } else if (distV < distH) { //this indicates a vertical wall
                     rayX[ray] = rayVX;
                     rayY[ray] = rayVY;
@@ -271,7 +271,7 @@ public class RayCasterClean extends GameEngine {
                     isVerticalSurface[ray] = true;
                     //pinpoint where the ray intercepts the wall to determine wall texture
                     wallImageX = (int) ((rayY[ray]%64)/64 * 128 - displayLineThickness/2);
-                    if (wallImageX<0) {
+                    if (wallImageX<0) { //checks to make sure the value is in range
                         wallImageX = 0;
                     } else if (wallImageX>128) {
                         wallImageX = 128;
@@ -279,7 +279,7 @@ public class RayCasterClean extends GameEngine {
                         wallImageX = 128 - (int)displayLineThickness;
                     }
                     //add wall subimage to the array
-                    imageWallSegment[ray] = subImage(imageTestWall, wallImageX, 0,(int)displayLineThickness, 128);
+                    imageWallSegment[ray] = imageTestWallStrips[wallImageX];
                 }
                 // increament ray angle for the next ray
                 rayAngleNow += (64.0/NUMOFRAYS);
@@ -441,6 +441,7 @@ public class RayCasterClean extends GameEngine {
 
     // declare game assets
     private Image imageTestWall;
+    private Image [] imageTestWallStrips = new Image[128]; //1 pixel wide strips of the test wall image
 
     // declare fields for input
     private boolean keyUp, keyRight, keyDown, keyLeft; // directional key inputs
@@ -494,6 +495,10 @@ public class RayCasterClean extends GameEngine {
 
         // initalise game assets
         imageTestWall = loadImage("assets/visual/TestWall.png");
+        //pre-cut the test wall image into 1pixel wide strips
+        for (int i = 0; i < imageTestWallStrips.length; i++) {
+            imageTestWallStrips[i] = subImage(imageTestWall, i, 0,1, 128);
+        }
 
         // initialise the input fields:
         keyUp = false; //all the keys are not pressed to start with

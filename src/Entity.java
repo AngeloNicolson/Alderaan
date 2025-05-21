@@ -8,7 +8,8 @@ public abstract class Entity
         this.y = y;
     }
 
-    public abstract void update(GameEngine engine);
+    // Updated method signature to include dt
+    public abstract void update(GameEngine engine, double dt);
 
     public double getX()
     {

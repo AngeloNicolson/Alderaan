@@ -12,11 +12,6 @@ import javax.swing.*;
 public abstract class GameEngine implements KeyListener, MouseListener, MouseMotionListener
 {
     //-------------------------------------------------------
-    // Fields
-    //-------------------------------------------------------
-    private boolean[] keys = new boolean[256]; // Track key states
-
-    //-------------------------------------------------------
     // Game Engine Frame and Panel
     //-------------------------------------------------------
     JFrame mFrame;
@@ -133,6 +128,11 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
                 mFrame.pack();
             }
         });
+    }
+
+    public JFrame getFrame()
+    {
+        return mFrame;
     }
 
     // Return the width of the window
@@ -297,27 +297,17 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     public abstract void paintComponent();
 
     //-------------------------------------------------------
-    // Keyboard functions - (Unpdated to handle key press and release.)
+    // Keyboard functions
     //-------------------------------------------------------
 
     // Called whenever a key is pressed
     public void keyPressed(KeyEvent event)
     {
-        int keyCode = event.getKeyCode();
-        if (keyCode >= 0 && keyCode < keys.length)
-        {
-            keys[keyCode] = true;
-        }
     }
 
     // Called whenever a key is released
     public void keyReleased(KeyEvent event)
     {
-        int keyCode = event.getKeyCode();
-        if (keyCode >= 0 && keyCode < keys.length)
-        {
-            keys[keyCode] = false;
-        }
     }
 
     // Called whenever a key is pressed and immediately released
@@ -792,21 +782,6 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
             // Set LoopClip to null
             mLoopClip = null;
         }
-
-        public void setLoopVolume(float volume)
-        {
-            try
-            {
-                // Create Controls
-                FloatControl control = (FloatControl)mLoopClip.getControl(FloatControl.Type.MASTER_GAIN);
-                // Set Volume
-                control.setValue(volume);
-            }
-            catch (Exception e)
-            {
-                System.out.println("Error setting audio loop volume: " + e);
-            }
-        }
     }
 
     // Loads the AudioClip stored in the file specified by filename
@@ -840,7 +815,7 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     }
 
     // Plays an AudioClip
-    public static boolean playAudio(AudioClip audioClip)
+    public static void playAudio(AudioClip audioClip)
     {
         // Check audioClip for null
         if (audioClip == null)
@@ -849,7 +824,7 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
             System.out.println("Error: audioClip is null\n");
 
             // Return
-            return false;
+            return;
         }
 
         try
@@ -875,14 +850,11 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
         {
             // Display Error Message
             System.out.println("Error playing Audio Clip\n");
-            return false;
         }
-
-        return true;
     }
 
     // Plays an AudioClip with a volume in decibels
-    public static boolean playAudio(AudioClip audioClip, float volume)
+    public static void playAudio(AudioClip audioClip, float volume)
     {
         // Check audioClip for null
         if (audioClip == null)
@@ -891,7 +863,7 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
             System.out.println("Error: audioClip is null\n");
 
             // Return
-            return false;
+            return;
         }
 
         try
@@ -923,14 +895,11 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
         {
             // Display Error Message
             System.out.println("Error: could not play Audio Clip\n");
-            return false;
         }
-
-        return true;
     }
 
     // Starts playing an AudioClip on loop
-    public static boolean startAudioLoop(AudioClip audioClip)
+    public static void startAudioLoop(AudioClip audioClip)
     {
         // Check audioClip for null
         if (audioClip == null)
@@ -939,7 +908,7 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
             System.out.println("Error: audioClip is null\n");
 
             // Return
-            return false;
+            return;
         }
 
         // Get Loop Clip
@@ -966,7 +935,6 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
             {
                 // Display Error Message
                 System.out.println("Error: could not play Audio Clip\n");
-                return false;
             }
         }
 
@@ -975,17 +943,59 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
 
         // Start Audio Clip playing
         clip.start();
-
-        return true;
     }
 
     // Starts playing an AudioClip on loop with a volume in decibels
-    public static boolean startAudioLoop(AudioClip audioClip, float volume)
+    public static void startAudioLoop(AudioClip audioClip, float volume)
     {
-        boolean success = startAudioLoop(audioClip);
-        if (success)
-            audioClip.setLoopVolume(volume);
-        return success;
+        // Check audioClip for null
+        if (audioClip == null)
+        {
+            // Print error message
+            System.out.println("Error: audioClip is null\n");
+
+            // Return
+            return;
+        }
+
+        // Get Loop Clip
+        Clip clip = audioClip.getLoopClip();
+
+        // Create Loop Clip if necessary
+        if (clip == null)
+        {
+            try
+            {
+                // Create a Clip
+                clip = AudioSystem.getClip();
+
+                // Load data
+                clip.open(audioClip.getAudioFormat(), audioClip.getData(), 0, (int)audioClip.getBufferSize());
+
+                // Create Controls
+                FloatControl control = (FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN);
+
+                // Set Volume
+                control.setValue(volume);
+
+                // Set Clip to Loop
+                clip.loop(Clip.LOOP_CONTINUOUSLY);
+
+                // Set Loop Clip
+                audioClip.setLoopClip(clip);
+            }
+            catch (Exception exception)
+            {
+                // Display Error Message
+                System.out.println("Error: could not play Audio Clip\n");
+            }
+        }
+
+        // Set Frame Position to 0
+        clip.setFramePosition(0);
+
+        // Start Audio Clip playing
+        clip.start();
     }
 
     // Stops an AudioClip playing
@@ -1182,31 +1192,5 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     {
         // Calculate and return atan2
         return Math.toDegrees(Math.atan2(x, y));
-    }
-
-    /*
-     * ----------------------------------------------------------
-     * ----------------------ENGINE ADDITIONS -------------------
-     * ----------------------------------------------------------
-     */
-
-    public boolean getKey(int keyCode)
-    {
-        if (keyCode >= 0 && keyCode < keys.length)
-        {
-            return keys[keyCode];
-        }
-        return false;
-    }
-
-    // Getters for window dimensions
-    public int getWidth()
-    {
-        return mWidth;
-    }
-
-    public int getHeight()
-    {
-        return mHeight;
     }
 }

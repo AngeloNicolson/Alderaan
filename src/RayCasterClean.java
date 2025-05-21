@@ -1,7 +1,9 @@
 //Joshua Sim, 22004867
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 public class RayCasterClean extends GameEngine {
@@ -69,30 +71,61 @@ public class RayCasterClean extends GameEngine {
         //update method of object
         public void update(double dt){
 
+            double moveX = 0;
+            double moveY = 0;
+
+
             //key controls
             if (keyLeft) {
-                angle -= 5; //decrease the angle 
-                if (angle < 0) { //reset negative angles to within the 360 range
-                    angle = 360;
-                }
+                //Strafe Left
+                moveX += cos(angle - 90);
+                moveY += sin(angle - 90);
             }
             if (keyRight) {
-                angle += 5; //increase the angle
-                if (angle > 359.9999) { //reset over 360 angles to within the 360 range
-                    angle = 0;
-                }
+                //Strafe Right
+                moveX += cos(angle + 90);
+                moveY += sin(angle + 90);
             }
             if (keyUp) {
-                //move the player object forward, the way it's facing
-                posX += cos(angle) * speed * dt;
-                posY += sin(angle) * speed * dt;
+                //Move forward
+                moveX += cos(angle);
+                moveY += sin(angle);
             }
             if (keyDown) {
-                //move the player object backward, away from where it's facing
-                posX -= cos(angle) * speed * dt;
-                posY -= sin(angle) * speed * dt;
+                //Move back
+                moveX -= cos(angle);
+                moveY -= sin(angle);
             }
             //note: 'origin' point is set facing dead right, like in a textbook
+
+            //Normalize Movement (prevent faster diagonal movement)
+            double moveLength = Math.sqrt(moveX * moveX + moveY * moveY);
+            if (moveLength > 0) {
+                moveX = moveX / moveLength;
+                moveY = moveY / moveLength;
+            }
+            double newX = posX + moveX * speed * dt;
+            double newY = posY + moveY * speed * dt;
+            boolean collisionX = false;
+            for (WallBlock wall : RayCasterClean.this.wallBlocks) {
+                if (RayCasterClean.this.collisionPoint(wall.getPosX(), wall.getPosY(), wall.getWidth(), wall.getHeight(), newX, posY)) {
+                    collisionX = true;
+                    break;
+                }
+            }
+            if (!collisionX) {
+                posX = newX;
+            }
+            boolean collisionY = false;
+            for (WallBlock wall : RayCasterClean.this.wallBlocks) {
+                if (RayCasterClean.this.collisionPoint(wall.getPosX(), wall.getPosY(), wall.getWidth(), wall.getHeight(), posX, newY)) {
+                    collisionY = true;
+                    break;
+                }
+            }
+            if (!collisionY) {
+                posY = newY;
+            }
 
             //--Ray Checking--
             rayAngleNow = angle - (NUMOFRAYS/ (NUMOFRAYS/32)); //set first ray angle to left of player angle 
@@ -421,6 +454,17 @@ public class RayCasterClean extends GameEngine {
     public void init() {
         // set the size of the game board
         setWindowSize(WINDOWWIDTH, WINDOWHEIGHT);
+        SwingUtilities.invokeLater(() -> {
+            if (mPanel != null) {
+                mPanel.addMouseMotionListener(this);
+                // Simulate  a  blank cursor
+                BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+                Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImg, new Point(0, 0), "blankCursor");
+                mPanel.setCursor(blankCursor);
+            } else {
+                System.out.println("Warning: mPanel is still null after invokeLater.");
+            }
+        });
 
         // initialise map
         mapColX = 8;
@@ -524,21 +568,21 @@ public class RayCasterClean extends GameEngine {
 
     // Method for when key is pressed
     public void keyPressed(KeyEvent e) {
-        // The user pressed left arrow key...
-        if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+        // The user pressed A
+        if (e.getKeyCode() == KeyEvent.VK_A) {
             // ...then record input
             keyLeft = true;
         }
-        // The user pressed right arrow key
-        if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+        // The user pressed D
+        if (e.getKeyCode() == KeyEvent.VK_D) {
             keyRight = true;
         }
-        // The user pressed up arrow key
-        if (e.getKeyCode() == KeyEvent.VK_UP) {
+        // The user pressed W
+        if (e.getKeyCode() == KeyEvent.VK_W) {
             keyUp = true;
         }
-        // The user pressed down arrow key
-        if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+        // The user pressed S
+        if (e.getKeyCode() == KeyEvent.VK_S) {
             keyDown = true;
         }
     }
@@ -546,22 +590,52 @@ public class RayCasterClean extends GameEngine {
     // Method for when key is released
     public void keyReleased(KeyEvent e) {
         // The user releases left arrow key
-        if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+        if (e.getKeyCode() == KeyEvent.VK_A) {
             //...then record lack of input
             keyLeft = false;
         }
         // The user releases right arrow key
-        if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+        if (e.getKeyCode() == KeyEvent.VK_D) {
             keyRight = false;
         }
         // The user releases up arrow key
-        if (e.getKeyCode() == KeyEvent.VK_UP) {
+        if (e.getKeyCode() == KeyEvent.VK_W) {
             keyUp = false;
         }
         // The user releases down arrow key
-        if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+        if (e.getKeyCode() == KeyEvent.VK_S) {
             keyDown = false;
         }
     }
 
+    public void mouseMoved(MouseEvent e) {
+        if(playerObject == null){
+            return;
+        }
+        int centerX = width() / 2; // Window center X
+        int centerY = height() / 2; // Window center Y
+        int mouseX = e.getX();
+        double sensitivity = 0.1;
+
+        int deltaX = mouseX - centerX;
+        playerObject.angle += deltaX * sensitivity;
+
+        if (playerObject.angle < 0) {
+            playerObject.angle += 360;
+        } else if (playerObject.angle >= 360) {
+            playerObject.angle -= 360;
+        }
+        try {
+            Robot robot = new Robot();
+            Point panelLocation = mPanel.getLocationOnScreen();
+            robot.mouseMove(panelLocation.x + centerX, panelLocation.y + centerY);
+        } catch (AWTException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        //Unused
+    }
 }

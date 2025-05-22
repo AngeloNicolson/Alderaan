@@ -1,19 +1,16 @@
 import java.awt.*;
-import java.awt.geom.*;
-
-import javax.swing.*;
-
 import java.awt.event.*;
+import java.awt.geom.*;
 import java.awt.image.*;
 import java.io.*;
-
-import java.util.Stack;
 import java.util.Random;
-
+import java.util.Stack;
 import javax.imageio.*;
 import javax.sound.sampled.*;
+import javax.swing.*;
 
-public abstract class GameEngine implements KeyListener, MouseListener, MouseMotionListener {
+public abstract class GameEngine implements KeyListener, MouseListener, MouseMotionListener
+{
     //-------------------------------------------------------
     // Game Engine Frame and Panel
     //-------------------------------------------------------
@@ -28,17 +25,22 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     //-------------------------------------------------------
 
     // Returns the time in milliseconds
-    public long getTime() {
+    public long getTime()
+    {
         // Get the current time from the system
         return System.currentTimeMillis();
     }
 
     // Waits for ms milliseconds
-    public void sleep(double ms) {
-        try {
+    public void sleep(double ms)
+    {
+        try
+        {
             // Sleep
             Thread.sleep((long)ms);
-        } catch(Exception e) {
+        }
+        catch (Exception e)
+        {
             // Do Nothing
         }
     }
@@ -50,9 +52,11 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     long time = 0, oldTime = 0;
 
     // Returns the time passed since this function was last called.
-    public long measureTime() {
+    public long measureTime()
+    {
         time = getTime();
-        if(oldTime == 0) {
+        if (oldTime == 0)
+        {
             oldTime = time;
         }
         long passed = time - oldTime;
@@ -64,7 +68,8 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     // Functions for setting up the window
     //-------------------------------------------------------
     // Function to create the window and display it
-    public void setupWindow(int width, int height) {
+    public void setupWindow(int width, int height)
+    {
         mFrame = new JFrame();
         mPanel = new GamePanel();
 
@@ -72,7 +77,7 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
         mHeight = height;
 
         mFrame.setSize(width, height);
-        mFrame.setLocation(200,200);
+        mFrame.setLocation(200, 200);
         mFrame.setTitle("Window");
         mFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mFrame.add(mPanel);
@@ -84,25 +89,25 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
 
         // Register a key event dispatcher to get a turn in handling all
         // key events, independent of which component currently has the focus
-        KeyboardFocusManager.getCurrentKeyboardFocusManager()
-                .addKeyEventDispatcher(new KeyEventDispatcher() {
-                    @Override
-                    public boolean dispatchKeyEvent(KeyEvent e) {
-                        switch (e.getID()) {
-                            case KeyEvent.KEY_PRESSED:
-                                GameEngine.this.keyPressed(e);
-                                return false;
-                            case KeyEvent.KEY_RELEASED:
-                                GameEngine.this.keyReleased(e);
-                                return false;
-                            case KeyEvent.KEY_TYPED:
-                                GameEngine.this.keyTyped(e);
-                                return false;
-                            default:
-                                return false; // do not consume the event
-                        }
-                    }
-                });
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
+            @Override public boolean dispatchKeyEvent(KeyEvent e)
+            {
+                switch (e.getID())
+                {
+                case KeyEvent.KEY_PRESSED:
+                    GameEngine.this.keyPressed(e);
+                    return false;
+                case KeyEvent.KEY_RELEASED:
+                    GameEngine.this.keyReleased(e);
+                    return false;
+                case KeyEvent.KEY_TYPED:
+                    GameEngine.this.keyTyped(e);
+                    return false;
+                default:
+                    return false; // do not consume the event
+                }
+            }
+        });
 
         // Resize the window
         mPanel.setPreferredSize(new Dimension(width, height));
@@ -110,10 +115,11 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
         mFrame.pack();
     }
 
-    public void setWindowSize(final int width, final int height) {
+    public void setWindowSize(final int width, final int height)
+    {
         SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
+            @Override public void run()
+            {
                 mWidth = width;
                 mHeight = height;
                 // Resize the window
@@ -124,13 +130,20 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
         });
     }
 
+    public JFrame getFrame()
+    {
+        return mFrame;
+    }
+
     // Return the width of the window
-    public int width() {
+    public int width()
+    {
         return mWidth;
     }
 
     // Return the height of the window
-    public int height() {
+    public int height()
+    {
         return mHeight;
     }
 
@@ -138,12 +151,14 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     // Main Game function
     //-------------------------------------------------------
 
-    public GameEngine() {
+    public GameEngine()
+    {
         this(500, 500);
     }
 
     // GameEngine Constructor
-    public GameEngine(int width, int height) {
+    public GameEngine(int width, int height)
+    {
         // Create graphics transform stack
         mTransforms = new Stack<AffineTransform>();
 
@@ -153,8 +168,8 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
 
         // Create window
         SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
+            @Override public void run()
+            {
                 // Create the window
                 setupWindow(width, height);
             }
@@ -162,7 +177,8 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     }
 
     // Create Game Function
-    public static void createGame(GameEngine game, int framerate) {
+    public static void createGame(GameEngine game, int framerate)
+    {
         // Initialise Game
         game.init();
 
@@ -170,23 +186,28 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
         game.gameLoop(framerate);
     }
 
-    public static void createGame(GameEngine game) {
+    public static void createGame(GameEngine game)
+    {
         // Call CreateGame
         createGame(game, 30);
     }
 
     // Game Timer
-    protected class GameTimer extends Timer {
+    protected class GameTimer extends Timer
+    {
         private static final long serialVersionUID = 1L;
         private int framerate;
 
-        protected GameTimer(int framerate, ActionListener listener) {
-            super(1000/framerate, listener);
+        protected GameTimer(int framerate, ActionListener listener)
+        {
+            super(1000 / framerate, listener);
             this.framerate = framerate;
         }
 
-        protected void setFramerate(int framerate) {
-            if (framerate < 1) framerate = 1;
+        protected void setFramerate(int framerate)
+        {
+            if (framerate < 1)
+                framerate = 1;
             this.framerate = framerate;
 
             int delay = 1000 / framerate;
@@ -194,7 +215,8 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
             setDelay(delay);
         }
 
-        protected int getFramerate() {
+        protected int getFramerate()
+        {
             return framerate;
         }
     }
@@ -203,8 +225,8 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     // and calls all the updates of the game and
     // tells the game to display a new frame.
     GameTimer timer = new GameTimer(30, new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
+        @Override public void actionPerformed(ActionEvent e)
+        {
             // Determine the time step
             double passedTime = measureTime();
             double dt = passedTime / 1000.;
@@ -218,12 +240,14 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     });
 
     // The GameEngine main Panel
-    protected class GamePanel extends JPanel {
+    protected class GamePanel extends JPanel
+    {
         private static final long serialVersionUID = 1L;
 
         // This gets called any time the Operating System
         // tells the program to paint itself
-        public void paintComponent(Graphics graphics) {
+        public void paintComponent(Graphics graphics)
+        {
             // Get the graphics object
             mGraphics = (Graphics2D)graphics;
 
@@ -232,17 +256,20 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
             mTransforms.push(mGraphics.getTransform());
 
             // Rendering settings
-            mGraphics.setRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON));
+            mGraphics.setRenderingHints(
+                new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON));
 
             // Paint the game
-            if (initialised) {
+            if (initialised)
+            {
                 GameEngine.this.paintComponent();
             }
         }
     }
 
     // Initialises and starts the game loop with the given framerate.
-    public void gameLoop(int framerate) {
+    public void gameLoop(int framerate)
+    {
         initialised = true; // assume init has been called or won't be called
 
         timer.setFramerate(framerate);
@@ -255,7 +282,9 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     //-------------------------------------------------------
     // Initialise function
     //-------------------------------------------------------
-    public void init() {}
+    public void init()
+    {
+    }
 
     //-------------------------------------------------------
     // Update function
@@ -272,13 +301,19 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     //-------------------------------------------------------
 
     // Called whenever a key is pressed
-    public void keyPressed(KeyEvent event) {}
+    public void keyPressed(KeyEvent event)
+    {
+    }
 
     // Called whenever a key is released
-    public void keyReleased(KeyEvent event) {}
+    public void keyReleased(KeyEvent event)
+    {
+    }
 
     // Called whenever a key is pressed and immediately released
-    public void keyTyped(KeyEvent event) {}
+    public void keyTyped(KeyEvent event)
+    {
+    }
 
     //-------------------------------------------------------
     // Mouse functions
@@ -286,25 +321,39 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
 
     // Called whenever a mouse button is clicked
     // (pressed and released in the same position)
-    public void mouseClicked(MouseEvent event) {}
+    public void mouseClicked(MouseEvent event)
+    {
+    }
 
     // Called whenever a mouse button is pressed
-    public void mousePressed(MouseEvent event) {}
+    public void mousePressed(MouseEvent event)
+    {
+    }
 
     // Called whenever a mouse button is released
-    public void mouseReleased(MouseEvent event) {}
+    public void mouseReleased(MouseEvent event)
+    {
+    }
 
     // Called whenever the mouse cursor enters the game panel
-    public void mouseEntered(MouseEvent event) {}
+    public void mouseEntered(MouseEvent event)
+    {
+    }
 
     // Called whenever the mouse cursor leaves the game panel
-    public void mouseExited(MouseEvent event) {}
+    public void mouseExited(MouseEvent event)
+    {
+    }
 
     // Called whenever the mouse is moved
-    public void mouseMoved(MouseEvent event) {}
+    public void mouseMoved(MouseEvent event)
+    {
+    }
 
     // Called whenever the mouse is moved with the mouse button held down
-    public void mouseDragged(MouseEvent event) {}
+    public void mouseDragged(MouseEvent event)
+    {
+    }
 
     //-------------------------------------------------------
     // Graphics Functions
@@ -322,63 +371,106 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     Color white = Color.WHITE;
 
     // Changes the background Color to the color c
-    public void changeBackgroundColor(Color c) {
+    public void changeBackgroundColor(Color c)
+    {
         // Set background colour
         mGraphics.setBackground(c);
     }
 
     // Changes the background Color to the color (red,green,blue)
-    public void changeBackgroundColor(int red, int green, int blue) {
+    public void changeBackgroundColor(int red, int green, int blue)
+    {
         // Clamp values
-        if(red < 0)   {red = 0;}
-        if(red > 255) {red = 255;}
+        if (red < 0)
+        {
+            red = 0;
+        }
+        if (red > 255)
+        {
+            red = 255;
+        }
 
-        if(green < 0)   {green = 0;}
-        if(green > 255) {green = 255;}
+        if (green < 0)
+        {
+            green = 0;
+        }
+        if (green > 255)
+        {
+            green = 255;
+        }
 
-        if(blue < 0)   {blue = 0;}
-        if(blue > 255) {blue = 255;}
+        if (blue < 0)
+        {
+            blue = 0;
+        }
+        if (blue > 255)
+        {
+            blue = 255;
+        }
 
         // Set background colour
-        mGraphics.setBackground(new Color(red,green,blue));
+        mGraphics.setBackground(new Color(red, green, blue));
     }
 
     // Clears the background, makes the whole window whatever the background color is
-    public void clearBackground(int width, int height) {
+    public void clearBackground(int width, int height)
+    {
         // Clear background
         mGraphics.clearRect(0, 0, width, height);
     }
 
     // Changes the drawing Color to the color c
-    public void changeColor(Color c) {
+    public void changeColor(Color c)
+    {
         // Set colour
         mGraphics.setColor(c);
     }
 
     // Changes the drawing Color to the color (red,green,blue)
-    public void changeColor(int red, int green, int blue) {
+    public void changeColor(int red, int green, int blue)
+    {
         // Clamp values
-        if(red < 0)   {red = 0;}
-        if(red > 255) {red = 255;}
+        if (red < 0)
+        {
+            red = 0;
+        }
+        if (red > 255)
+        {
+            red = 255;
+        }
 
-        if(green < 0)   {green = 0;}
-        if(green > 255) {green = 255;}
+        if (green < 0)
+        {
+            green = 0;
+        }
+        if (green > 255)
+        {
+            green = 255;
+        }
 
-        if(blue < 0)   {blue = 0;}
-        if(blue > 255) {blue = 255;}
+        if (blue < 0)
+        {
+            blue = 0;
+        }
+        if (blue > 255)
+        {
+            blue = 255;
+        }
 
         // Set colour
-        mGraphics.setColor(new Color(red,green,blue));
+        mGraphics.setColor(new Color(red, green, blue));
     }
 
     // Draws a line from (x1,y2) to (x2,y2)
-    void drawLine(double x1, double y1, double x2, double y2) {
+    void drawLine(double x1, double y1, double x2, double y2)
+    {
         // Draw a Line
         mGraphics.draw(new Line2D.Double(x1, y1, x2, y2));
     }
 
     // Draws a line from (x1,y2) to (x2,y2) with width l
-    void drawLine(double x1, double y1, double x2, double y2, double l) {
+    void drawLine(double x1, double y1, double x2, double y2, double l)
+    {
         // Set the stroke
         mGraphics.setStroke(new BasicStroke((float)l));
 
@@ -390,14 +482,16 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     }
 
     // This function draws a rectangle at (x,y) with width and height (w,h)
-    void drawRectangle(double x, double y, double w, double h) {
+    void drawRectangle(double x, double y, double w, double h)
+    {
         // Draw a Rectangle
         mGraphics.draw(new Rectangle2D.Double(x, y, w, h));
     }
 
     // This function draws a rectangle at (x,y) with width and height (w,h)
     // with a line of width l
-    void drawRectangle(double x, double y, double w, double h, double l) {
+    void drawRectangle(double x, double y, double w, double h, double l)
+    {
         // Set the stroke
         mGraphics.setStroke(new BasicStroke((float)l));
 
@@ -409,45 +503,51 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     }
 
     // This function fills in a rectangle at (x,y) with width and height (w,h)
-    void drawSolidRectangle(double x, double y, double w, double h) {
+    void drawSolidRectangle(double x, double y, double w, double h)
+    {
         // Fill a Rectangle
         mGraphics.fill(new Rectangle2D.Double(x, y, w, h));
     }
 
     // This function draws a circle at (x,y) with radius
-    void drawCircle(double x, double y, double radius) {
+    void drawCircle(double x, double y, double radius)
+    {
         // Draw a Circle
-        mGraphics.draw(new Ellipse2D.Double(x-radius, y-radius, radius*2, radius*2));
+        mGraphics.draw(new Ellipse2D.Double(x - radius, y - radius, radius * 2, radius * 2));
     }
 
     // This function draws a circle at (x,y) with radius
     // with a line of width l
-    void drawCircle(double x, double y, double radius, double l) {
+    void drawCircle(double x, double y, double radius, double l)
+    {
         // Set the stroke
         mGraphics.setStroke(new BasicStroke((float)l));
 
         // Draw a Circle
-        mGraphics.draw(new Ellipse2D.Double(x-radius, y-radius, radius*2, radius*2));
+        mGraphics.draw(new Ellipse2D.Double(x - radius, y - radius, radius * 2, radius * 2));
 
         // Reset the stroke
         mGraphics.setStroke(new BasicStroke(1.0f));
     }
 
     // This function draws a circle at (x,y) with radius
-    void drawSolidCircle(double x, double y, double radius) {
+    void drawSolidCircle(double x, double y, double radius)
+    {
         // Fill a Circle
-        mGraphics.fill(new Ellipse2D.Double(x-radius, y-radius, radius*2, radius*2));
+        mGraphics.fill(new Ellipse2D.Double(x - radius, y - radius, radius * 2, radius * 2));
     }
 
     // This function draws text on the screen at (x,y)
-    public void drawText(double x, double y, String s) {
+    public void drawText(double x, double y, String s)
+    {
         // Draw text on the screen
         mGraphics.setFont(new Font("Arial", Font.PLAIN, 40));
         mGraphics.drawString(s, (int)x, (int)y);
     }
 
     // This function draws bold text on the screen at (x,y)
-    public void drawBoldText(double x, double y, String s) {
+    public void drawBoldText(double x, double y, String s)
+    {
         // Draw text on the screen
         mGraphics.setFont(new Font("Arial", Font.BOLD, 40));
         mGraphics.drawString(s, (int)x, (int)y);
@@ -455,7 +555,8 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
 
     // This function draws text on the screen at (x,y)
     // with Font (font,size)
-    public void drawText(double x, double y, String s, String font, int size) {
+    public void drawText(double x, double y, String s, String font, int size)
+    {
         // Draw text on the screen
         mGraphics.setFont(new Font(font, Font.PLAIN, size));
         mGraphics.drawString(s, (int)x, (int)y);
@@ -463,7 +564,8 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
 
     // This function draws bold text on the screen at (x,y)
     // with Font (font,size)
-    public void drawBoldText(double x, double y, String s, String font, int size) {
+    public void drawBoldText(double x, double y, String s, String font, int size)
+    {
         // Draw text on the screen
         mGraphics.setFont(new Font(font, Font.BOLD, size));
         mGraphics.drawString(s, (int)x, (int)y);
@@ -474,14 +576,18 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     //-------------------------------------------------------
 
     // Loads an image from file
-    public static Image loadImage(String filename) {
-        try {
+    public static Image loadImage(String filename)
+    {
+        try
+        {
             // Load Image
             Image image = ImageIO.read(new File(filename));
 
             // Return Image
             return image;
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             // Show Error Message
             System.out.println("Error: could not load image " + filename);
             System.exit(1);
@@ -492,9 +598,11 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     }
 
     // Loads a sub-image out of an image
-    public static Image subImage(Image source, int x, int y, int w, int h) {
+    public static Image subImage(Image source, int x, int y, int w, int h)
+    {
         // Check if image is null
-        if(source == null) {
+        if (source == null)
+        {
             // Print Error message
             System.out.println("Error: cannot extract a subImage from a null image.\n");
 
@@ -513,9 +621,11 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     }
 
     // Draws an image on the screen at position (x,y)
-    public void drawImage(Image image, double x, double y) {
+    public void drawImage(Image image, double x, double y)
+    {
         // Check if image is null
-        if(image == null) {
+        if (image == null)
+        {
             // Print Error message
             System.out.println("Error: cannot draw null image.\n");
             return;
@@ -526,9 +636,11 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     }
 
     // Draws an image on the screen at position (x,y)
-    public void drawImage(Image image, double x, double y, double w, double h) {
+    public void drawImage(Image image, double x, double y, double w, double h)
+    {
         // Check if image is null
-        if(image == null) {
+        if (image == null)
+        {
             // Print Error message
             System.out.println("Error: cannot draw null image.\n");
             return;
@@ -545,43 +657,50 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     Stack<AffineTransform> mTransforms;
 
     // Save the current transform
-    public void saveCurrentTransform() {
+    public void saveCurrentTransform()
+    {
         // Push transform onto the stack
         mTransforms.push(mGraphics.getTransform());
     }
 
     // Restores the last transform
-    public void restoreLastTransform() {
+    public void restoreLastTransform()
+    {
         // Set current transform to the top of the stack.
         mGraphics.setTransform(mTransforms.peek());
 
         // If there is more than one transform on the stack
-        if(mTransforms.size() > 1) {
+        if (mTransforms.size() > 1)
+        {
             // Pop a transform off the stack
             mTransforms.pop();
         }
     }
 
     // This function translates the drawing context by (x,y)
-    void translate(double x, double y) {
+    void translate(double x, double y)
+    {
         // Translate the drawing context
-        mGraphics.translate(x,y);
+        mGraphics.translate(x, y);
     }
 
     // This function rotates the drawing context by a degrees
-    void rotate(double a) {
+    void rotate(double a)
+    {
         // Rotate the drawing context
         mGraphics.rotate(Math.toRadians(a));
     }
 
     // This function scales the drawing context by (x,y)
-    void scale(double x, double y) {
+    void scale(double x, double y)
+    {
         // Scale the drawing context
         mGraphics.scale(x, y);
     }
 
     // This function shears the drawing context by (x,y)
-    void shear(double x, double y) {
+    void shear(double x, double y)
+    {
         // Shear the drawing context
         mGraphics.shear(x, y);
     }
@@ -591,7 +710,8 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     //-------------------------------------------------------
 
     // Class used to store an audio clip
-    public static class AudioClip {
+    public static class AudioClip
+    {
         // Format
         AudioFormat mFormat;
 
@@ -604,32 +724,38 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
         // Loop Clip
         Clip mLoopClip;
 
-        public Clip getLoopClip() {
+        public Clip getLoopClip()
+        {
             // return mLoopClip
             return mLoopClip;
         }
 
-        public void setLoopClip(Clip clip) {
+        public void setLoopClip(Clip clip)
+        {
             // Set mLoopClip to clip
             mLoopClip = clip;
         }
 
-        public AudioFormat getAudioFormat() {
+        public AudioFormat getAudioFormat()
+        {
             // Return mFormat
             return mFormat;
         }
 
-        public byte[] getData() {
+        public byte[] getData()
+        {
             // Return mData
             return mData;
         }
 
-        public long getBufferSize() {
+        public long getBufferSize()
+        {
             // Return mLength
             return mLength;
         }
 
-        public AudioClip(AudioInputStream stream) {
+        public AudioClip(AudioInputStream stream)
+        {
             // Get Format
             mFormat = stream.getFormat();
 
@@ -639,10 +765,13 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
             // Allocate Buffer Data
             mData = new byte[(int)mLength];
 
-            try {
+            try
+            {
                 // Read data
                 stream.read(mData);
-            } catch(Exception exception) {
+            }
+            catch (Exception exception)
+            {
                 // Print Error
                 System.out.println("Error reading Audio File\n");
 
@@ -653,22 +782,13 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
             // Set LoopClip to null
             mLoopClip = null;
         }
-
-        public void setLoopVolume(float volume) {
-            try {
-                // Create Controls
-                FloatControl control = (FloatControl)mLoopClip.getControl(FloatControl.Type.MASTER_GAIN);
-                // Set Volume
-                control.setValue(volume);
-            } catch (Exception e) {
-                System.out.println("Error setting audio loop volume: " + e);
-            }
-        }
     }
 
     // Loads the AudioClip stored in the file specified by filename
-    public static AudioClip loadAudio(String filename) {
-        try {
+    public static AudioClip loadAudio(String filename)
+    {
+        try
+        {
             // Open File
             File file = new File(filename);
 
@@ -679,11 +799,13 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
             AudioClip clip = new AudioClip(audio);
 
             // Fix pauses and mixer issues when clip is first played
-            playAudio(clip,-60);
+            playAudio(clip, -60);
 
             // Return Audio Clip
             return clip;
-        } catch(Exception e) {
+        }
+        catch (Exception e)
+        {
             // Catch Exception
             System.out.println("Error: cannot open Audio File " + filename + "\n");
         }
@@ -693,23 +815,27 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     }
 
     // Plays an AudioClip
-    public static boolean playAudio(AudioClip audioClip) {
+    public static void playAudio(AudioClip audioClip)
+    {
         // Check audioClip for null
-        if(audioClip == null) {
+        if (audioClip == null)
+        {
             // Print error message
             System.out.println("Error: audioClip is null\n");
 
             // Return
-            return false;
+            return;
         }
 
-        try {
+        try
+        {
             // Create a Clip
             Clip clip = AudioSystem.getClip();
             clip.addLineListener(new LineListener() {
-                @Override
-                public void update(LineEvent event) {
-                    if(event.getType().equals(LineEvent.Type.STOP)) {
+                @Override public void update(LineEvent event)
+                {
+                    if (event.getType().equals(LineEvent.Type.STOP))
+                    {
                         clip.close();
                     }
                 }
@@ -719,33 +845,36 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
 
             // Play Clip
             clip.start();
-        } catch(Exception exception) {
+        }
+        catch (Exception exception)
+        {
             // Display Error Message
             System.out.println("Error playing Audio Clip\n");
-            return false;
         }
-
-        return true;
     }
 
     // Plays an AudioClip with a volume in decibels
-    public static boolean playAudio(AudioClip audioClip, float volume) {
+    public static void playAudio(AudioClip audioClip, float volume)
+    {
         // Check audioClip for null
-        if(audioClip == null) {
+        if (audioClip == null)
+        {
             // Print error message
             System.out.println("Error: audioClip is null\n");
 
             // Return
-            return false;
+            return;
         }
 
-        try {
+        try
+        {
             // Create a Clip
             Clip clip = AudioSystem.getClip();
             clip.addLineListener(new LineListener() {
-                @Override
-                public void update(LineEvent event) {
-                    if(event.getType().equals(LineEvent.Type.STOP)) {
+                @Override public void update(LineEvent event)
+                {
+                    if (event.getType().equals(LineEvent.Type.STOP))
+                    {
                         clip.close();
                     }
                 }
@@ -761,33 +890,35 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
 
             // Play Clip
             clip.start();
-        } catch(Exception exception) {
+        }
+        catch (Exception exception)
+        {
             // Display Error Message
             System.out.println("Error: could not play Audio Clip\n");
-            return false;
         }
-
-        return true;
     }
 
-
     // Starts playing an AudioClip on loop
-    public static boolean startAudioLoop(AudioClip audioClip) {
+    public static void startAudioLoop(AudioClip audioClip)
+    {
         // Check audioClip for null
-        if(audioClip == null) {
+        if (audioClip == null)
+        {
             // Print error message
             System.out.println("Error: audioClip is null\n");
 
             // Return
-            return false;
+            return;
         }
 
         // Get Loop Clip
         Clip clip = audioClip.getLoopClip();
 
         // Create Loop Clip if necessary
-        if(clip == null) {
-            try {
+        if (clip == null)
+        {
+            try
+            {
                 // Create a Clip
                 clip = AudioSystem.getClip();
 
@@ -799,10 +930,11 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
 
                 // Set Loop Clip
                 audioClip.setLoopClip(clip);
-            } catch(Exception exception) {
+            }
+            catch (Exception exception)
+            {
                 // Display Error Message
                 System.out.println("Error: could not play Audio Clip\n");
-                return false;
             }
         }
 
@@ -811,25 +943,70 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
 
         // Start Audio Clip playing
         clip.start();
-
-        return true;
     }
 
     // Starts playing an AudioClip on loop with a volume in decibels
-    public static boolean startAudioLoop(AudioClip audioClip, float volume) {
-        boolean success = startAudioLoop(audioClip);
-        if (success)
-            audioClip.setLoopVolume(volume);
-        return success;
+    public static void startAudioLoop(AudioClip audioClip, float volume)
+    {
+        // Check audioClip for null
+        if (audioClip == null)
+        {
+            // Print error message
+            System.out.println("Error: audioClip is null\n");
+
+            // Return
+            return;
+        }
+
+        // Get Loop Clip
+        Clip clip = audioClip.getLoopClip();
+
+        // Create Loop Clip if necessary
+        if (clip == null)
+        {
+            try
+            {
+                // Create a Clip
+                clip = AudioSystem.getClip();
+
+                // Load data
+                clip.open(audioClip.getAudioFormat(), audioClip.getData(), 0, (int)audioClip.getBufferSize());
+
+                // Create Controls
+                FloatControl control = (FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN);
+
+                // Set Volume
+                control.setValue(volume);
+
+                // Set Clip to Loop
+                clip.loop(Clip.LOOP_CONTINUOUSLY);
+
+                // Set Loop Clip
+                audioClip.setLoopClip(clip);
+            }
+            catch (Exception exception)
+            {
+                // Display Error Message
+                System.out.println("Error: could not play Audio Clip\n");
+            }
+        }
+
+        // Set Frame Position to 0
+        clip.setFramePosition(0);
+
+        // Start Audio Clip playing
+        clip.start();
     }
 
     // Stops an AudioClip playing
-    public static void stopAudioLoop(AudioClip audioClip) {
+    public static void stopAudioLoop(AudioClip audioClip)
+    {
         // Get Loop Clip
         Clip clip = audioClip.getLoopClip();
 
         // Check clip is not null
-        if(clip != null){
+        if (clip != null)
+        {
             // Stop Clip playing
             clip.stop();
         }
@@ -841,9 +1018,11 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
     Random mRandom = null;
 
     // Function that returns a random integer between 0 and max
-    public int rand(int max) {
+    public int rand(int max)
+    {
         // Check if mRandom Exists
-        if(mRandom == null) {
+        if (mRandom == null)
+        {
             // Create a new Random Object
             mRandom = new Random();
         }
@@ -852,13 +1031,15 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
         double d = mRandom.nextDouble();
 
         // Convert to an integer in range [0, max) and return
-        return (int)(d*max);
+        return (int)(d * max);
     }
 
     // Function that gives you a random number between 0 and max
-    public float rand(float max) {
+    public float rand(float max)
+    {
         // Check if mRandom Exists
-        if(mRandom == null) {
+        if (mRandom == null)
+        {
             // Create a new Random Object
             mRandom = new Random();
         }
@@ -867,13 +1048,15 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
         float d = mRandom.nextFloat();
 
         // Convert to range [0, max) and return
-        return d*max;
+        return d * max;
     }
 
     // Function that gives you a random number between 0 and max
-    public double rand(double max) {
+    public double rand(double max)
+    {
         // Check if mRandom Exists
-        if(mRandom == null) {
+        if (mRandom == null)
+        {
             // Create a new Random Object
             mRandom = new Random();
         }
@@ -882,114 +1065,132 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
         double value = mRandom.nextDouble();
 
         // Convert to range [0, max) and return
-        return value*max;
+        return value * max;
     }
 
     // Returns the largest integer that is less than or equal
     // to the argument value.
-    public static int floor(double value) {
+    public static int floor(double value)
+    {
         // Calculate and return floor
         return (int)Math.floor(value);
     }
 
     // Returns the smallest integer that is greater than or equal
     // to the argument value.
-    public static int ceil(double value){
+    public static int ceil(double value)
+    {
         // Calculate and return ceil
         return (int)Math.ceil(value);
     }
 
     // Rounds the argument value to the closest integer.
-    public static int round(double value) {
+    public static int round(double value)
+    {
         // Calculate and return round
         return (int)Math.round(value);
     }
 
     // Returns the square root of the parameter
-    public static double sqrt(double value) {
+    public static double sqrt(double value)
+    {
         // Calculate and return the sqrt
         return Math.sqrt(value);
     }
 
     // Returns the length of a vector
-    public static double length(double x, double y) {
+    public static double length(double x, double y)
+    {
         // Calculate and return the sqrt
-        return Math.sqrt(x*x + y*y);
+        return Math.sqrt(x * x + y * y);
     }
 
     // Returns the distance between two points (x1,y1) and (x2,y2)
-    public static double distance(double x1, double y1, double x2, double y2) {
+    public static double distance(double x1, double y1, double x2, double y2)
+    {
         // Calculate and return the distance
-        return Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
+        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
     }
 
     // Converts an angle in radians to degrees
-    public static double toDegrees(double radians) {
+    public static double toDegrees(double radians)
+    {
         // Calculate and return the degrees
         return Math.toDegrees(radians);
     }
 
     // Converts an angle in degrees to radians
-    public static double toRadians(double degrees) {
+    public static double toRadians(double degrees)
+    {
         // Calculate and return the radians
         return Math.toRadians(degrees);
     }
 
     // Returns the absolute value of the parameter
-    public static int abs(int value) {
+    public static int abs(int value)
+    {
         // Calculate and return abs
         return Math.abs(value);
     }
 
     // Returns the absolute value of the parameter
-    public static float abs(float value) {
+    public static float abs(float value)
+    {
         // Calculate and return abs
         return Math.abs(value);
     }
 
     // Returns the absolute value of the parameter
-    public static double abs(double value) {
+    public static double abs(double value)
+    {
         // Calculate and return abs
         return Math.abs(value);
     }
 
     // Returns the cos of value
-    public static double cos(double value) {
+    public static double cos(double value)
+    {
         // Calculate and return cos
         return Math.cos(Math.toRadians(value));
     }
 
     // Returns the acos of value
-    public static double acos(double value) {
+    public static double acos(double value)
+    {
         // Calculate and return acos
         return Math.toDegrees(Math.acos(value));
     }
 
     // Returns the sin of value
-    public static double sin(double value) {
+    public static double sin(double value)
+    {
         // Calculate and return sin
         return Math.sin(Math.toRadians(value));
     }
 
     // Returns the asin of value
-    public static double asin(double value) {
+    public static double asin(double value)
+    {
         // Calculate and return asin
         return Math.toDegrees(Math.asin(value));
     }
 
     // Returns the tan of value
-    public static double tan(double value) {
+    public static double tan(double value)
+    {
         // Calculate and return tan
         return Math.tan(Math.toRadians(value));
     }
     // Returns the atan of value
-    public static double atan(double value) {
+    public static double atan(double value)
+    {
         // Calculate and return atan
         return Math.toDegrees(Math.atan(value));
     }
     // Returns the atan2 of value
-    public static double atan2(double x, double y) {
+    public static double atan2(double x, double y)
+    {
         // Calculate and return atan2
-        return Math.toDegrees(Math.atan2(x,y));
+        return Math.toDegrees(Math.atan2(x, y));
     }
 }

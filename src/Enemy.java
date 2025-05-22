@@ -1,63 +1,101 @@
 import java.awt.Color;
+import java.awt.Image;
 
 public class Enemy extends Entity
 {
-    private String name;
+    private double angle;
     private GameMap map;
-    private int tileSize;
+    private int mapS;
+    private String enemyType;
+    private Image sprite;
 
-    public Enemy(double x, double y, String name, GameMap map, int tileSize)
+    private double speed = 60; // pixels per second
+
+    public Enemy(double x, double y, String enemyType, GameMap map, int mapS)
     {
         super(x, y);
-        this.name = name;
+        this.enemyType = enemyType;
         this.map = map;
-        this.tileSize = tileSize;
-    }
+        this.mapS = mapS;
 
-    @Override public void update(GameEngine game, double dt)
-    {
-    }
-
-    public void render(GameEngine g, Player player)
-    {
-        // Draw enemy on 2.5D screen view — simplified example
-        double dx = getX() - player.getX();
-        double dy = getY() - player.getY();
-        double dist = Math.sqrt(dx * dx + dy * dy);
-        double angleToEnemy = Math.atan2(dy, dx);
-        double relativeAngle = angleToEnemy - player.getAngle();
-
-        while (relativeAngle > Math.PI)
-            relativeAngle -= 2 * Math.PI;
-        while (relativeAngle < -Math.PI)
-            relativeAngle += 2 * Math.PI;
-
-        double fov = Math.toRadians(60);
-
-        if (Math.abs(relativeAngle) < fov / 2 && dist > 0.1)
+        // Load different sprite based on type
+        switch (enemyType)
         {
-            int screenWidth = g.width();
-            int screenHeight = g.height();
-
-            double screenX = (0.5 + relativeAngle / fov) * screenWidth;
-
-            // Size inversely proportional to distance
-            double size = 64 * tileSize / dist;
-
-            g.changeColor(Color.RED);
-            g.drawSolidRectangle(screenX - size / 2, (screenHeight - size) / 2, size, size);
+        case "Death Trooper" -> this.sprite = GameEngine.loadImage("assets/visual/Storm_Trooper_Placeholder.png");
+        case "Do not use yet" -> this.sprite = GameEngine.loadImage("assets/placeholder.png");
+        default -> this.sprite = GameEngine.loadImage("assets/visual/Storm_Trooper_Placeholder.png");
         }
+    }
 
-        // Draw on minimap
-        final int MINI_MAP_SIZE = 128;
-        int miniTileSize = MINI_MAP_SIZE / map.getWidth();
-        int offsetX = g.width() - MINI_MAP_SIZE - 10;
-        int offsetY = 10;
+    @Override public void update(GameEngine engine, double dt, Player player)
+    {
+        // Vector from enemy to player
+        double dx = player.getX() - x;
+        double dy = player.getY() - y;
+        double dist = Math.sqrt(dx * dx + dy * dy);
 
-        double miniX = getX() / tileSize * miniTileSize + offsetX;
-        double miniY = getY() / tileSize * miniTileSize + offsetY;
+        if (dist > 1e-5)
+        { // avoid division by zero
+            // Normalize direction vector
+            double dirX = dx / dist;
+            double dirY = dy / dist;
 
-        g.changeColor(Color.RED);
-        g.drawSolidCircle(miniX, miniY, 4);
+            // Enemy speed = half the player speed
+            double enemySpeed = player.getSpeed() / 2;
+
+            // Calculate potential new position
+            double newX = x + dirX * enemySpeed * dt;
+            double newY = y + dirY * enemySpeed * dt;
+
+            // Check if new tile is walkable
+            int tileX = (int)(newX / mapS);
+            int tileY = (int)(newY / mapS);
+
+            if (map.isWalkableTile(tileX, tileY))
+            {
+                x = newX;
+                y = newY;
+            }
+
+            // Update angle to face player
+            angle = Math.atan2(dy, dx);
+        }
+    }
+
+    public void render(GameEngine engine, Player player)
+    {
+        double dx = this.x - player.getX();
+        double dy = this.y - player.getY();
+        double distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Angle between player and enemy
+        double angleToEnemy = Math.atan2(dy, dx) - player.getAngle();
+
+        // Normalize angle to (-PI, PI)
+        while (angleToEnemy < -Math.PI)
+            angleToEnemy += 2 * Math.PI;
+        while (angleToEnemy > Math.PI)
+            angleToEnemy -= 2 * Math.PI;
+
+        // FOV and screen projection
+        double fov = Math.toRadians(60);
+        if (Math.abs(angleToEnemy) < fov / 2)
+        {
+            int screenWidth = engine.width();
+            int screenHeight = engine.height();
+
+            // Enemy on screen (center X)
+            double projectionPlaneDist = screenWidth / (2 * Math.tan(fov / 2));
+            double screenX = Math.tan(angleToEnemy) * projectionPlaneDist + screenWidth / 2;
+
+            // Projected height based on distance
+            double spriteHeight = (Main.TILE_SIZE * 320) / distance;
+
+            // Adjust Y position by vertical look offset
+            double yOffset = (screenHeight - spriteHeight) / 2 - player.getVerticalLookOffset();
+
+            engine.changeColor(Color.RED); // or draw sprite here
+            engine.drawSolidRectangle(screenX - spriteHeight / 2, yOffset, spriteHeight, spriteHeight);
+        }
     }
 }

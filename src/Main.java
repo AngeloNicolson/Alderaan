@@ -63,8 +63,8 @@ public class Main extends GameEngine
                 }
             }
         }
-        enemies.add(new Enemy(5 * TILE_SIZE + TILE_SIZE / 2.0, 5 * TILE_SIZE + TILE_SIZE / 2.0, "Death Trooper",
-                              gameMap, TILE_SIZE));
+        enemies.add(
+            new Enemy(5 * TILE_SIZE + TILE_SIZE / 2.0, 5 * TILE_SIZE + TILE_SIZE / 2.0, "", gameMap, TILE_SIZE));
 
         raycaster = new RayCaster(gameMap, TILE_SIZE);
 
@@ -91,6 +91,11 @@ public class Main extends GameEngine
     {
         player.setDirection(left, right, up, down);
         player.update(this, dt);
+        // Update Enemies
+        for (Enemy enemy : enemies)
+        {
+            enemy.update(this, dt, player);
+        }
     }
 
     @Override public void paintComponent()
@@ -127,6 +132,11 @@ public class Main extends GameEngine
             changeColor(new Color(shade, shade, shade));
 
             drawSolidRectangle(i * stripWidth, yOffset, stripWidth + 1, lineHeight);
+            // --- RENDER ENEMIES ---
+            for (Enemy enemy : enemies)
+            {
+                enemy.render(this, player);
+            }
         }
 
         // --- MINIMAP OVERLAY ---

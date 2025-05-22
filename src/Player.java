@@ -32,6 +32,11 @@ public class Player extends Entity
         return angle;
     }
 
+    public double getSpeed()
+    {
+        return speed;
+    }
+
     public double getVerticalLookOffset()
     {
         return verticalLookOffset;

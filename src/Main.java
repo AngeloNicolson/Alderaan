@@ -6,6 +6,8 @@ import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main extends GameEngine
 {
@@ -13,6 +15,7 @@ public class Main extends GameEngine
     private GameMap gameMap;
     private Player player;
     private RayCaster raycaster;
+    private List<Enemy> enemies = new ArrayList<>();
 
     // Window size
     private int width = 1024;
@@ -37,7 +40,7 @@ public class Main extends GameEngine
         gameMap = new GameMap();
 
         // Load map from file
-        if (!gameMap.loadFromFile("maps/map_1.txt"))
+        if (!gameMap.loadFromFile("maps/PlayGround_Map.txt"))
         {
             System.err.println("Error loading map.txt, exiting.");
             System.exit(1);
@@ -60,6 +63,8 @@ public class Main extends GameEngine
                 }
             }
         }
+        enemies.add(new Enemy(5 * TILE_SIZE + TILE_SIZE / 2.0, 5 * TILE_SIZE + TILE_SIZE / 2.0, "Death Trooper",
+                              gameMap, TILE_SIZE));
 
         raycaster = new RayCaster(gameMap, TILE_SIZE);
 

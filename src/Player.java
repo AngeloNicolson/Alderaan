@@ -4,7 +4,6 @@ public class Player extends Entity
     private double angle;              // direction player is facing (in radians)
     private double verticalLookOffset; // Vertical offset for camera pitch
     private double speed = 77;
-    private double rotationSpeed = 0.5;
     private boolean left, right, up, down;
 
     private GameMap map;

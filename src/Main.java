@@ -180,6 +180,11 @@ public class Main extends GameEngine
 
     @Override public void mouseMoved(java.awt.event.MouseEvent e)
     {
+
+        // Camera/Player sensitivity
+        double sensitivityX = 0.002;
+        double sensitivityY = 0.5;
+
         int mouseX = e.getXOnScreen();
         int mouseY = e.getYOnScreen();
 
@@ -194,11 +199,9 @@ public class Main extends GameEngine
         }
 
         int deltaX = mouseX - lastMouseX;
-        double sensitivityX = 0.005;
-        player.rotate(deltaX * sensitivityX);
-
         int deltaY = mouseY - lastMouseY;
-        double sensitivityY = 1.0;
+
+        player.rotate(deltaX * sensitivityX);
         player.setVerticalLookOffset(player.getVerticalLookOffset() + deltaY * sensitivityY);
 
         if (robot != null)

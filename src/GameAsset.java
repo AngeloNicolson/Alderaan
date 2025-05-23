@@ -24,6 +24,9 @@ public class GameAsset {
         return imageStripsTestWall[x];
     }
 
-    
+    public int getWALLPIXELSIZE() {
+        return WALLPIXELSIZE;
+    }
+
     
 }

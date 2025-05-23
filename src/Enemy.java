@@ -112,13 +112,17 @@ public class Enemy extends Entity
 
         int stripIndex = (int)((relativeAngle + halfFOV) / (2 * halfFOV) * numRays);
 
-        double scale = (mapS * 320) / distance;
+        // Sprite Scaling adn vertical offset
+        double scaleFactor = 0.77;
+        double scale = ((mapS * 320) / distance) * scaleFactor;
         double spriteHeight = scale;
         double spriteWidth = scale;
+        int verticalSpriteOffset = 5; // tweak this to move sprite down
 
-        int screenX = (int)(stripIndex * stripWidth - spriteWidth / 2);
+        // Vertical offset - compensating for camera vertical movement
         double verticalOffset = player.getVerticalLookOffset();
-        int screenY = (int)((screenHeight - spriteHeight) / 2 - verticalOffset);
+        int screenY = (int)((screenHeight - spriteHeight) / 2 - verticalOffset + verticalSpriteOffset);
+        int screenX = (int)(stripIndex * stripWidth - spriteWidth / 2);
 
         int stateIndex = getAIState().ordinal();
         Image fullFrame;

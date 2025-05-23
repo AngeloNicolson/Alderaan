@@ -10,9 +10,9 @@ public class EnemyAI
     private AIState state = AIState.IDLE;
     private GameMap map;
     private int tileSize;
-    private double alertRadius = 300;      // How far enemy notices noise
-    private double stopDistance = 50;      // Stops right near player
-    private double maxChaseDistance = 200; // Gives up if player flees too far
+    private double alertRadius = 100;     // How far enemy notices noise
+    private double stopDistance = 30;     // Stops right near player
+    private double maxChaseDistance = 70; // Gives up if player flees too far
 
     private double targetX, targetY;
 

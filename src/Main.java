@@ -8,6 +8,7 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Main extends GameEngine
 {
@@ -48,7 +49,7 @@ public class Main extends GameEngine
 
         setWindowSize(width, height);
 
-    // Find a walkable spawn tile
+    // Find a walkable spawn tile for the player
     outer:
         for (int y = 0; y < GameMap.HEIGHT; y++)
         {
@@ -63,8 +64,33 @@ public class Main extends GameEngine
                 }
             }
         }
-        enemies.add(
-            new Enemy(5 * TILE_SIZE + TILE_SIZE / 2.0, 5 * TILE_SIZE + TILE_SIZE / 2.0, "", gameMap, TILE_SIZE));
+
+        // Collect all walkable tiles for enemy spawning
+        List<int[]> walkableTiles = new ArrayList<>();
+        for (int y = 0; y < GameMap.HEIGHT; y++)
+        {
+            for (int x = 0; x < GameMap.WIDTH; x++)
+            {
+                if (gameMap.isWalkableTile(x, y))
+                    walkableTiles.add(new int[] {x, y});
+            }
+        }
+
+        Random rand = new Random();
+        int enemyCount = 6;
+
+        enemies.clear(); // clear existing enemies if any
+
+        for (int i = 0; i < enemyCount; i++)
+        {
+            // Pick a random tile index
+            int[] tile = walkableTiles.get(rand.nextInt(walkableTiles.size()));
+
+            double ex = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
+            double ey = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
+
+            enemies.add(new Enemy(ex, ey, "", gameMap, TILE_SIZE));
+        }
 
         raycaster = new RayCaster(gameMap, TILE_SIZE);
 
@@ -126,7 +152,7 @@ public class Main extends GameEngine
             double lineHeight = (TILE_SIZE * 320) / dist;
             double yOffset = (height - lineHeight) / 2 - verticalLookOffset;
 
-            double maxDistance = 500;
+            double maxDistance = 100;
             double brightness = Math.max(0.2, 1.0 - dist / maxDistance);
             int shade = (int)(brightness * 255);
 
@@ -138,16 +164,16 @@ public class Main extends GameEngine
 
             drawSolidRectangle(i * stripWidth, yOffset, stripWidth + 1, lineHeight);
         }
+
+        // --- MINIMAP OVERLAY ---
+        final int MINI_MAP_SIZE = 128;
+        int miniTileSize = MINI_MAP_SIZE / gameMap.getWidth();
         // --- RENDER ENEMIES ---
         for (Enemy enemy : enemies)
         {
             enemy.render(this, player, rayDistances);
             enemy.drawOnMinimap(this);
         }
-
-        // --- MINIMAP OVERLAY ---
-        final int MINI_MAP_SIZE = 128;
-        int miniTileSize = MINI_MAP_SIZE / gameMap.getWidth();
 
         // Position minimap at top-right corner with some padding
         int offsetX = width() - MINI_MAP_SIZE - 10; // 10 px from right
@@ -176,6 +202,7 @@ public class Main extends GameEngine
         double endX = px + Math.cos(player.getAngle()) * lineLength;
         double endY = py + Math.sin(player.getAngle()) * lineLength;
         drawLine(px, py, endX, endY);
+
         for (Enemy enemy : enemies)
         {
             enemy.drawOnMinimap(this);
@@ -205,7 +232,6 @@ public class Main extends GameEngine
 
     @Override public void mouseMoved(java.awt.event.MouseEvent e)
     {
-
         // Camera/Player sensitivity
         double sensitivityX = 0.002;
         double sensitivityY = 0.5;

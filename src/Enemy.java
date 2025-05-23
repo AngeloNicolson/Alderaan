@@ -167,7 +167,7 @@ public class Enemy extends Entity
         }
         else
         {
-            fullFrame = animations[1][0];
+            fullFrame = animations[0][0];
         }
 
         int frameW = fullFrame.getWidth(null);
@@ -284,5 +284,15 @@ public class Enemy extends Entity
         if (degrees < 0)
             degrees += 360;
         return (int)((degrees + 22.5) / 45) % 8;
+    }
+
+    public double getAngle()
+    {
+        return angle;
+    }
+
+    public double getSpeed()
+    {
+        return speed;
     }
 }

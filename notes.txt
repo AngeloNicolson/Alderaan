@@ -1,0 +1,2 @@
+// Add a rotational delay for enemies.
+// Make enemies switch to idle sprites when reaching the player

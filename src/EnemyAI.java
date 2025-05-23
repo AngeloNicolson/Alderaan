@@ -2,9 +2,9 @@ public class EnemyAI
 {
     public enum AIState
     {
-        IDLE,    // Not aware of the player
-        ALERTED, // Possibly heard the player or sensed presence
-        CHASING  // Has seen the player and is pursuing
+        IDLE,    // ORDINAL 0 - Not aware of the player
+        ALERTED, // ORDINAL 1 - Possibly heard the player or sensed presence
+        CHASING  // ORDINAL 2 - Has seen the player and is pursuing
     }
 
     private AIState state = AIState.IDLE;
@@ -41,6 +41,8 @@ public class EnemyAI
             }
             break;
 
+            // TODO: Somthing is wrong here. The sprite is flickering while slowly getting closer to player. I think
+            // this is due to some soret of rapid stat change. Need ot have a deeper look
         case ALERTED:
             targetX = enemy.getX();
             targetY = enemy.getY();

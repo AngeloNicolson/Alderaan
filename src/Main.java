@@ -142,6 +142,7 @@ public class Main extends GameEngine
         for (Enemy enemy : enemies)
         {
             enemy.render(this, player, rayDistances);
+            enemy.drawOnMinimap(this);
         }
 
         // --- MINIMAP OVERLAY ---
@@ -175,6 +176,10 @@ public class Main extends GameEngine
         double endX = px + Math.cos(player.getAngle()) * lineLength;
         double endY = py + Math.sin(player.getAngle()) * lineLength;
         drawLine(px, py, endX, endY);
+        for (Enemy enemy : enemies)
+        {
+            enemy.drawOnMinimap(this);
+        }
     }
 
     @Override public void keyPressed(KeyEvent e)

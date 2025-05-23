@@ -7,12 +7,12 @@ public class EnemyAI
         CHASING  // ORDINAL 2 - Has seen the player and is pursuing
     }
 
-    private AIState state = AIState.IDLE;
+    private AIState state = AIState.IDLE; // Initial state
     private GameMap map;
     private int tileSize;
-    private double alertRadius = 100;     // How far enemy notices noise
-    private double stopDistance = 30;     // Stops right near player
-    private double maxChaseDistance = 70; // Gives up if player flees too far
+    private double alertRadius = 120;      // How far enemy notices noise
+    private double stopDistance = 30;      // Stops right near player
+    private double maxChaseDistance = 110; // Gives up if player flees too far
 
     private double targetX, targetY;
 
@@ -41,8 +41,6 @@ public class EnemyAI
             }
             break;
 
-            // TODO: Somthing is wrong here. The sprite is flickering while slowly getting closer to player. I think
-            // this is due to some soret of rapid stat change. Need ot have a deeper look
         case ALERTED:
             targetX = enemy.getX();
             targetY = enemy.getY();
@@ -55,7 +53,8 @@ public class EnemyAI
             }
             else if (dist > alertRadius * 1.5)
             {
-                state = AIState.IDLE; // Player moved away
+                state = AIState.IDLE;     // Player moved away
+                enemy.facePlayer(player); // Ensure correct initial facing for movement
             }
             break;
 
@@ -63,20 +62,16 @@ public class EnemyAI
             targetX = player.getX();
             targetY = player.getY();
 
-            // When CHASING, the enemy's angle should reflect its movement direction (towards target)
-            // or face the player if it's stopped very close.
             if (dist > stopDistance)
             {
-                enemy.moveToward(targetX, targetY, dt); // This method sets enemy.angle based on movement.
+                enemy.moveToward(targetX, targetY, dt);
             }
-            else // If stopped (dist <= stopDistance), keep facing the player
-            {
-                enemy.facePlayer(player); // Keep facing player even when stopped
-            }
+
+            enemy.smoothFacePlayer(player, Math.PI * 2, dt); // turn speed = 2pi a second
 
             if (dist > maxChaseDistance)
             {
-                state = AIState.IDLE; // Player got away
+                state = AIState.IDLE;
             }
             break;
 

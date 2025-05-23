@@ -4,11 +4,13 @@ import java.util.Map;
 
 public class Enemy extends Entity
 {
+    // Map varible
     private double angle;
     private GameMap map;
     private int mapS;
-    private String enemyType;
 
+    // Sprite varibles
+    private String enemyType;
     private Image spriteSheet;
     private Image[][] animations; // [state][frame]
 
@@ -19,8 +21,16 @@ public class Enemy extends Entity
     private int currentFrame = 0;
     private Map<Image, Image[]> spriteSlices = new HashMap<>();
 
+    // Speed - AI
     private double speed = 50;
     private EnemyAI ai;
+
+    // Walkback state variables
+    private boolean isWalkingBack = false;
+    private double walkBackDistance = 20;
+    private double walkedBack = 0;
+    private int walkBackDirection = 0; // -1 for left, +1 for right
+    private double walkBackSpeed = 50;
 
     public Enemy(double x, double y, String enemyType, GameMap map, int mapS)
     {
@@ -67,9 +77,47 @@ public class Enemy extends Entity
         ai.update(this, player, dt);
         EnemyAI.AIState newState = ai.getState();
 
+        // Detect flick from CHASING to ALERTED: trigger walkback
+        if (oldState == EnemyAI.AIState.CHASING && newState == EnemyAI.AIState.ALERTED)
+        {
+            isWalkingBack = true;
+            walkedBack = 0;
+
+            // Choose left or right randomly relative to player
+            double angleToPlayer = Math.atan2(player.getY() - y, player.getX() - x);
+            walkBackDirection = (Math.random() < 0.5) ? -1 : 1;
+            angle = angleToPlayer + walkBackDirection * (Math.PI / 2); // 90 degrees left or right
+        }
+
+        // If currently walking back, move accordingly and skip normal AI movement/frame update
+        if (isWalkingBack)
+        {
+            double moveStep = walkBackSpeed * dt;
+            if (walkedBack + moveStep >= walkBackDistance)
+            {
+                moveStep = walkBackDistance - walkedBack;
+                isWalkingBack = false; // Done walking back
+            }
+            walkedBack += moveStep;
+
+            double dx = Math.cos(angle) * moveStep;
+            double dy = Math.sin(angle) * moveStep;
+
+            double newX = x + dx;
+            double newY = y + dy;
+
+            if (map.isWalkableTile((int)(newX / mapS), (int)(y / mapS)))
+                x = newX;
+            if (map.isWalkableTile((int)(x / mapS), (int)(newY / mapS)))
+                y = newY;
+
+            // No frame update during walkback
+            return;
+        }
+
         if (oldState != EnemyAI.AIState.CHASING && newState == EnemyAI.AIState.CHASING)
         {
-            facePlayer(player);
+            smoothFacePlayer(player, 3.0, dt);
         }
 
         int stateIndex = newState.ordinal();
@@ -112,14 +160,14 @@ public class Enemy extends Entity
 
         int stripIndex = (int)((relativeAngle + halfFOV) / (2 * halfFOV) * numRays);
 
-        // Sprite Scaling adn vertical offset
+        // Sprite scaling and vertical offset
         double scaleFactor = 0.77;
         double scale = ((mapS * 320) / distance) * scaleFactor;
         double spriteHeight = scale;
         double spriteWidth = scale;
-        int verticalSpriteOffset = 5; // tweak this to move sprite down
+        int verticalSpriteOffset = 5; // tweak to move sprite down
 
-        // Vertical offset - compensating for camera vertical movement
+        // Vertical offset - compensate for camera vertical movement
         double verticalOffset = player.getVerticalLookOffset();
         int screenY = (int)((screenHeight - spriteHeight) / 2 - verticalOffset + verticalSpriteOffset);
         int screenX = (int)(stripIndex * stripWidth - spriteWidth / 2);
@@ -130,9 +178,10 @@ public class Enemy extends Entity
 
         int dir8;
 
+        // Handiling AI states and assigning directioons for sprite frames
         if (stateIndex == EnemyAI.AIState.CHASING.ordinal())
         {
-            // Player's angle relative to enemy's current facing
+            // Chasing animation: 8 directions with 6 frames each
             double angleToPlayer = Math.atan2(player.getY() - y, player.getX() - x);
             double relativeToEnemy = normalizeAngle(angleToPlayer - angle);
 
@@ -147,6 +196,23 @@ public class Enemy extends Entity
 
             int col = currentFrame % 6;
             fullFrame = animations[2][drawDir * 6 + col];
+        }
+        else if (isWalkingBack)
+        {
+            // During walkback, face left or right according to walkBackDirection
+            // Map left -> direction 3 (west), right -> direction 1 (east)
+            int forcedDir = (walkBackDirection == -1) ? 3 : 1;
+
+            int mappedDir = forcedDir;
+            if (mappedDir >= 5)
+            {
+                mappedDir = 8 - mappedDir;
+                flipHorizontal = true;
+            }
+            if (mappedDir > 4)
+                mappedDir = 4;
+
+            fullFrame = animations[0][mappedDir];
         }
         else if (stateIndex == EnemyAI.AIState.IDLE.ordinal())
         {
@@ -167,7 +233,7 @@ public class Enemy extends Entity
         }
         else
         {
-            fullFrame = animations[0][0];
+            fullFrame = animations[1][0];
         }
 
         int frameW = fullFrame.getWidth(null);
@@ -217,11 +283,36 @@ public class Enemy extends Entity
         return angle;
     }
 
+    //-----------------------------------------
+    //--------- FACING PLAYER METHODS ---------
+    //-----------------------------------------
     public void facePlayer(Player player)
     {
         double dx = player.getX() - this.x;
         double dy = player.getY() - this.y;
         this.angle = Math.atan2(dy, dx);
+    }
+
+    public void smoothFacePlayer(Player player, double maxTurnRate, double dt)
+    {
+        double dx = player.getX() - this.x;
+        double dy = player.getY() - this.y;
+        double targetAngle = Math.atan2(dy, dx);
+
+        double angleDiff = normalizeAngle(targetAngle - this.angle);
+
+        // Clamp the turning speed
+        double maxTurn = maxTurnRate * dt;
+        if (Math.abs(angleDiff) <= maxTurn)
+        {
+            this.angle = targetAngle;
+        }
+        else
+        {
+            this.angle += Math.signum(angleDiff) * maxTurn;
+        }
+
+        this.angle = normalizeAngle(this.angle);
     }
 
     public void moveToward(double targetX, double targetY, double dt)
@@ -241,11 +332,31 @@ public class Enemy extends Entity
                 x = newX;
             if (map.isWalkableTile((int)(x / mapS), (int)(newY / mapS)))
                 y = newY;
-
-            angle = Math.atan2(dy, dx);
         }
     }
 
+    private int getDirectionIndex(Player player)
+    {
+        double dx = player.getX() - x;
+        double dy = player.getY() - y;
+        double angleToPlayer = Math.atan2(dy, dx);
+        double relative = normalizeAngle(angleToPlayer - angle);
+        return getDirectionIndexFromAngle(relative);
+    }
+
+    private int getDirectionIndexFromAngle(double angle)
+    {
+        // 8 directions: N=0, NE=1, E=2, SE=3, S=4, SW=5, W=6, NW=7
+        double deg = Math.toDegrees(angle);
+        if (deg < 0)
+            deg += 360;
+        int index = (int)((deg + 22.5) / 45) % 8;
+        return index;
+    }
+
+    // -----------------------------------------
+    // ----------- Place on minimap ------------
+    // -----------------------------------------
     public void drawOnMinimap(GameEngine g)
     {
         final int MINI_MAP_SIZE = 128;
@@ -265,34 +376,5 @@ public class Enemy extends Entity
         double endY = miniY + Math.sin(angle) * lineLength;
 
         g.drawLine(miniX, miniY, endX, endY);
-    }
-
-    private int getDirectionIndex(Player player)
-    {
-        double dx = player.getX() - this.x;
-        double dy = player.getY() - this.y;
-        double angleToPlayer = Math.atan2(dy, dx);
-        double degrees = Math.toDegrees(angleToPlayer);
-        if (degrees < 0)
-            degrees += 360;
-        return (int)((degrees + 22.5) / 45) % 8;
-    }
-
-    private int getDirectionIndexFromAngle(double angle)
-    {
-        double degrees = Math.toDegrees(angle);
-        if (degrees < 0)
-            degrees += 360;
-        return (int)((degrees + 22.5) / 45) % 8;
-    }
-
-    public double getAngle()
-    {
-        return angle;
-    }
-
-    public double getSpeed()
-    {
-        return speed;
     }
 }

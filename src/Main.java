@@ -129,14 +129,19 @@ public class Main extends GameEngine
             double maxDistance = 500;
             double brightness = Math.max(0.2, 1.0 - dist / maxDistance);
             int shade = (int)(brightness * 255);
+
+            // Limit the max height, so it doesnt become huge, rendering off screen
+            double maxLineHeight = height * 2;
+            if (lineHeight > maxLineHeight)
+                lineHeight = maxLineHeight;
             changeColor(new Color(shade, shade, shade));
 
             drawSolidRectangle(i * stripWidth, yOffset, stripWidth + 1, lineHeight);
-            // --- RENDER ENEMIES ---
-            for (Enemy enemy : enemies)
-            {
-                enemy.render(this, player);
-            }
+        }
+        // --- RENDER ENEMIES ---
+        for (Enemy enemy : enemies)
+        {
+            enemy.render(this, player, rayDistances);
         }
 
         // --- MINIMAP OVERLAY ---
@@ -156,7 +161,7 @@ public class Main extends GameEngine
         drawSolidRectangle(offsetX, offsetY, MINI_MAP_SIZE, MINI_MAP_SIZE);
 
         // Draw the minimap tiles, blacking out those outside vision radius
-        int visionRadius = 5;
+        int visionRadius = 7;
         gameMap.draw(this, miniTileSize, offsetX, offsetY, player.getX(), player.getY(), visionRadius, TILE_SIZE);
 
         // Draw player on minimap

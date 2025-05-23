@@ -5,11 +5,12 @@ public class Enemy extends Entity
 {
     private double angle;
     private GameMap map;
-    private int mapS;
+    private int mapS; // essentially the tile size
     private String enemyType;
     private Image sprite;
 
-    private double speed = 60; // pixels per second
+    private double speed = 50; // pixels per second
+    private EnemyAI ai;
 
     public Enemy(double x, double y, String enemyType, GameMap map, int mapS)
     {
@@ -17,6 +18,8 @@ public class Enemy extends Entity
         this.enemyType = enemyType;
         this.map = map;
         this.mapS = mapS;
+
+        this.ai = new EnemyAI(map, mapS);
 
         // Load different sprite based on type
         switch (enemyType)
@@ -30,72 +33,115 @@ public class Enemy extends Entity
     @Override public void update(GameEngine engine, double dt, Player player)
     {
         // Vector from enemy to player
-        double dx = player.getX() - x;
-        double dy = player.getY() - y;
-        double dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist > 1e-5)
-        { // avoid division by zero
-            // Normalize direction vector
-            double dirX = dx / dist;
-            double dirY = dy / dist;
+        ai.update(this, player, dt);
+    }
+    // Purely for changing color during testing
+    public EnemyAI.AIState getAIState()
+    {
+        return ai.getState();
+    }
 
-            // Enemy speed = half the player speed
-            double enemySpeed = player.getSpeed() / 2;
+    // TODO: Add max height of enemy and add how close enemy can get to player so that we dont get zplane fighting
+    public void render(GameEngine g, Player player, double[] rayDistances)
+    {
+        double dx = x - player.getX();
+        double dy = y - player.getY();
 
-            // Calculate potential new position
-            double newX = x + dirX * enemySpeed * dt;
-            double newY = y + dirY * enemySpeed * dt;
+        // Distance from player to enemy
+        double distance = Math.sqrt(dx * dx + dy * dy);
 
-            // Check if new tile is walkable
-            int tileX = (int)(newX / mapS);
-            int tileY = (int)(newY / mapS);
+        // Angle between player direction and enemy
+        double angleToEnemy = Math.atan2(dy, dx);
+        double relativeAngle = normalizeAngle(angleToEnemy - player.getAngle());
 
-            if (map.isWalkableTile(tileX, tileY))
+        // If enemy is outside FOV, skip
+        double halfFOV = Math.toRadians(30); // Assuming 60 degree FOV
+        if (Math.abs(relativeAngle) > halfFOV)
+            return;
+
+        // Screen projection
+        int numRays = rayDistances.length;
+        int screenWidth = g.width();
+        int screenHeight = g.height();
+
+        int stripIndex = (int)((relativeAngle + halfFOV) / (2 * halfFOV) * numRays);
+        double stripWidth = (double)screenWidth / numRays;
+
+        double scale = (mapS * 320) / distance;
+        double spriteHeight = scale;
+        double spriteWidth = scale;
+
+        int screenX = (int)(stripIndex * stripWidth - spriteWidth / 2);
+        double verticalOffset = player.getVerticalLookOffset();
+        int screenY = (int)((screenHeight - spriteHeight) / 2 - verticalOffset);
+
+        // For easy state detection when building or altering AI.
+        // DO NOT REMOVE YET
+        Color enemyColor;
+        switch (getAIState())
+        {
+        case IDLE:
+            enemyColor = Color.GREEN; // Enemy unaware
+            break;
+        case ALERTED:
+            enemyColor = Color.ORANGE; // Enemy suspicious
+            break;
+        case CHASING:
+            enemyColor = Color.RED; // Enemy chasing player
+            break;
+        default:
+            enemyColor = Color.WHITE; // fallback
+            break;
+        }
+
+        g.changeColor(enemyColor);
+
+        // Render each vertical slice of enemy
+        for (int i = 0; i < spriteWidth; i++)
+        {
+            int rayIndex = (int)((screenX + i) / stripWidth);
+            if (rayIndex < 0 || rayIndex >= numRays)
+                continue;
+
+            // Compare enemy distance to wall at this slice, if is less than distance then render, otherwise cull the
+            // part of the enemy
+            if (distance < rayDistances[rayIndex])
             {
-                x = newX;
-                y = newY;
+                // Placeholder - use actual sprite slice
+                g.drawLine(screenX + i, screenY, screenX + i, (int)(screenY + spriteHeight));
             }
-
-            // Update angle to face player
-            angle = Math.atan2(dy, dx);
         }
     }
 
-    public void render(GameEngine engine, Player player)
+    private double normalizeAngle(double angle)
     {
-        double dx = this.x - player.getX();
-        double dy = this.y - player.getY();
-        double distance = Math.sqrt(dx * dx + dy * dy);
+        while (angle < -Math.PI)
+            angle += 2 * Math.PI;
+        while (angle > Math.PI)
+            angle -= 2 * Math.PI;
+        return angle;
+    }
 
-        // Angle between player and enemy
-        double angleToEnemy = Math.atan2(dy, dx) - player.getAngle();
+    public void facePlayer(Player player)
+    {
+        double dx = player.getX() - this.x;
+        double dy = player.getY() - this.y;
+        this.angle = Math.atan2(dy, dx);
+    }
 
-        // Normalize angle to (-PI, PI)
-        while (angleToEnemy < -Math.PI)
-            angleToEnemy += 2 * Math.PI;
-        while (angleToEnemy > Math.PI)
-            angleToEnemy -= 2 * Math.PI;
-
-        // FOV and screen projection
-        double fov = Math.toRadians(60);
-        if (Math.abs(angleToEnemy) < fov / 2)
+    public void moveToward(double targetX, double targetY, double dt)
+    {
+        double dx = targetX - x;
+        double dy = targetY - y;
+        double dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 0.001)
         {
-            int screenWidth = engine.width();
-            int screenHeight = engine.height();
-
-            // Enemy on screen (center X)
-            double projectionPlaneDist = screenWidth / (2 * Math.tan(fov / 2));
-            double screenX = Math.tan(angleToEnemy) * projectionPlaneDist + screenWidth / 2;
-
-            // Projected height based on distance
-            double spriteHeight = (Main.TILE_SIZE * 320) / distance;
-
-            // Adjust Y position by vertical look offset
-            double yOffset = (screenHeight - spriteHeight) / 2 - player.getVerticalLookOffset();
-
-            engine.changeColor(Color.RED); // or draw sprite here
-            engine.drawSolidRectangle(screenX - spriteHeight / 2, yOffset, spriteHeight, spriteHeight);
+            double dirX = dx / dist;
+            double dirY = dy / dist;
+            x += dirX * speed * dt;
+            y += dirY * speed * dt;
+            angle = Math.atan2(dy, dx);
         }
     }
 }

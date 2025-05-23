@@ -1,15 +1,38 @@
+import java.awt.Color;
+import java.awt.Image;
+
 public class RayCaster
 {
+    //declare fields
     private GameMap map;
-    private int mapS; // tile size
+    private int tileSize; // tile size
+    private GameAsset gameAsset;
 
-    public RayCaster(GameMap map, int mapS)
+    private int numRays; //number of rays
+    private double fov; //field of view in radians
+    private double [] rayX; //array of final ray's X and Y end coordinates
+    private double [] rayY;
+    private double [] rayDistances; //array of final ray's length
+    private Image [] imageWallSegment; //array of wall texture assigned to final ray
+
+
+    public RayCaster(GameMap map, int tileSize, GameAsset gameAsset)
     {
         this.map = map;
-        this.mapS = mapS;
+        this.tileSize = tileSize;
+        this.gameAsset = gameAsset;
+        //initalise defaults
+        numRays = 256; //default number of rays
+        fov = Math.toRadians(60); //default field of view
+        //initialise arrays for ray info
+        rayX = new double[numRays];
+        rayY = new double[numRays];
+        rayDistances = new double[numRays];
+        imageWallSegment = new Image[numRays];
+
     }
 
-    public double castSingleRay(double px, double py, double rayAngle)
+    public void castSingleRay(double px, double py, double rayAngle, int rayIndex)
     {
         double sinA = Math.sin(rayAngle);
         double cosA = Math.cos(rayAngle);
@@ -25,14 +48,14 @@ public class RayCaster
             if (sinA > 0)
             {
                 // Looking down, find first horizontal grid line below player
-                horY = ((int)(py / mapS) + 1) * mapS;
-                horStepY = mapS;
+                horY = ((int)(py / tileSize) + 1) * tileSize;
+                horStepY = tileSize;
             }
             else
             {
                 // Looking up, find first horizontal grid line above player
-                horY = ((int)(py / mapS)) * mapS - 0.0001;
-                horStepY = -mapS;
+                horY = ((int)(py / tileSize)) * tileSize - 0.0001;
+                horStepY = -tileSize;
             }
             horX = px + (horY - py) / sinA * cosA;
             horStepX = horStepY / sinA * cosA;
@@ -40,8 +63,8 @@ public class RayCaster
             // Step along horizontal lines until hit or max distance
             for (int i = 0; i < 100; i++)
             {
-                int tileX = (int)(horX / mapS);
-                int tileY = (int)(horY / mapS);
+                int tileX = (int)(horX / tileSize);
+                int tileY = (int)(horY / tileSize);
 
                 if (map.isWall(tileX, tileY))
                 {
@@ -66,14 +89,14 @@ public class RayCaster
             if (cosA > 0)
             {
                 // Looking right, find first vertical grid line to the right of player
-                vertX = ((int)(px / mapS) + 1) * mapS;
-                vertStepX = mapS;
+                vertX = ((int)(px / tileSize) + 1) * tileSize;
+                vertStepX = tileSize;
             }
             else
             {
                 // Looking left, find first vertical grid line to the left of player
-                vertX = ((int)(px / mapS)) * mapS - 0.0001;
-                vertStepX = -mapS;
+                vertX = ((int)(px / tileSize)) * tileSize - 0.0001;
+                vertStepX = -tileSize;
             }
             vertY = py + (vertX - px) / cosA * sinA;
             vertStepY = vertStepX / cosA * sinA;
@@ -81,8 +104,8 @@ public class RayCaster
             // Step along vertical lines until hit or max distance
             for (int i = 0; i < 100; i++)
             {
-                int tileX = (int)(vertX / mapS);
-                int tileY = (int)(vertY / mapS);
+                int tileX = (int)(vertX / tileSize);
+                int tileY = (int)(vertY / tileSize);
 
                 if (map.isWall(tileX, tileY))
                 {
@@ -97,28 +120,69 @@ public class RayCaster
         }
 
         // Return the smaller ray between the vertical or horizontal (closest wall hit)
-        if (horHit && vertHit)
-            return Math.min(horDist, vertDist);
-        else if (horHit)
-            return horDist;
-        else if (vertHit)
-            return vertDist;
-        else
-            return 1000; // no hit found
+        if (horHit && vertHit){
+            if (vertDist < horDist) { //indicates a vertical wall
+                rayX[rayIndex] = vertX;
+                rayY[rayIndex] = vertY;
+                rayDistances[rayIndex] = vertDist;
+            } else { //indicates (vertDist > hortDist), which is a horizontal wall
+                rayX[rayIndex] = horX;
+                rayY[rayIndex] = horY;
+                rayDistances[rayIndex] = horDist;
+            }
+        }  
+        else if (horHit){
+            rayX[rayIndex] = horX;
+            rayY[rayIndex] = horY;
+            rayDistances[rayIndex] = horDist;
+        }
+        else if (vertHit){
+            rayX[rayIndex] = vertX;
+            rayY[rayIndex] = vertY;
+            rayDistances[rayIndex] = vertDist;
+        }
+
+        //System.out.println("DEBUG: ray"+rayIndex+", x:"+rayX[rayIndex]+" y:"+rayY[rayIndex]);
     }
 
-    public double[] castRays(double px, double py, double playerAngle, int numRays, double fov)
+    public void castRays(double px, double py, double playerAngle)
     {
-        double[] distances = new double[numRays];
         double startAngle = playerAngle - fov / 2.0;
         double angleStep = fov / (numRays - 1);
 
         for (int i = 0; i < numRays; i++)
         {
             double rayAngle = startAngle + i * angleStep;
-            distances[i] = castSingleRay(px, py, rayAngle);
+            castSingleRay(px, py, rayAngle, i);
         }
-        return distances;
+    }
+
+    //draws the output of the rays casted
+    public void draw(GameEngine ge, double px, double py, double playerAngle, double verticalLookOffset){
+        
+        //cast the rays, and the ray info is stored in the local arrays
+        castRays(px, py, playerAngle);
+
+        double stripWidth = (double) ge.width() / numRays; // full width for 2.5D view
+
+        //loop to draw each ray
+        for (int i = 0; i < numRays; i++)
+        {
+            double dist = rayDistances[i];
+            // Correct fisheye
+            double angleOffset = (i - numRays / 2.0) * (fov / numRays);
+            dist *= Math.cos(angleOffset);
+
+            double lineHeight = (tileSize * 320) / dist;
+            double yOffset = (ge.height() - lineHeight) / 2 - verticalLookOffset;
+
+            double maxDistance = 500;
+            double brightness = Math.max(0.2, 1.0 - dist / maxDistance);
+            int shade = (int)(brightness * 255);
+            ge.changeColor(new Color(shade, shade, shade));
+
+            ge.drawSolidRectangle(i * stripWidth, yOffset, stripWidth, lineHeight);
+        }
     }
 
     // Helper method to calculate Euclidean distance

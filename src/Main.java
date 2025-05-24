@@ -1,21 +1,24 @@
-import javax.swing.*;
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.awt.Font;
-import java.awt.FontMetrics;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import javax.swing.*;
 
-enum GameState {
+enum GameState
+{
     PLAYING,
     GAME_OVER,
 }
-
 
 public class Main extends GameEngine
 {
@@ -23,6 +26,7 @@ public class Main extends GameEngine
     private GameMap gameMap;
     private Player player;
     private RayCaster raycaster;
+    private List<Enemy> enemies = new ArrayList<>();
     private GameAsset gameAsset;
     private GameState currentState = GameState.PLAYING;
 
@@ -37,19 +41,24 @@ public class Main extends GameEngine
     private int lastMouseX, lastMouseY;
     private boolean firstMouseUpdate = true;
     private Robot robot;
+    private boolean warpingMouse = false;
 
     public static void main(String[] args)
     {
         Main main = new Main();
-        try {
+        try
+        {
             SwingUtilities.invokeAndWait(() -> main.setupWindow(main.width, main.height));
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             System.err.println("Error setting up window: " + e.getMessage());
             System.exit(1);
         }
         main.init();
         createGame(main, 60);
     }
+
     @Override public void init()
     {
         gameMap = new GameMap();
@@ -62,9 +71,37 @@ public class Main extends GameEngine
         }
 
         setWindowSize(width, height);
+
+        // Initialize player once using your method
         initializePlayer();
 
-        // Initalise ray caster and associated objects
+        // Collect all walkable tiles for enemy spawning
+        List<int[]> walkableTiles = new ArrayList<>();
+        for (int y = 0; y < GameMap.HEIGHT; y++)
+        {
+            for (int x = 0; x < GameMap.WIDTH; x++)
+            {
+                if (gameMap.isWalkableTile(x, y))
+                    walkableTiles.add(new int[] {x, y});
+            }
+        }
+
+        // Adds the enemies
+        Random rand = new Random();
+        int enemyCount = 7;
+        enemies.clear(); // clear existing enemies if any
+        for (int i = 0; i < enemyCount; i++)
+        {
+            // Pick a random tile index
+            int[] tile = walkableTiles.get(rand.nextInt(walkableTiles.size()));
+
+            double ex = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
+            double ey = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
+
+            enemies.add(new Enemy(ex, ey, "", gameMap, TILE_SIZE));
+        }
+
+        // Initialize ray caster and associated objects
         gameAsset = new GameAsset();
 
         raycaster = new RayCaster(gameMap, TILE_SIZE, gameAsset);
@@ -90,11 +127,20 @@ public class Main extends GameEngine
 
     @Override public void update(double dt)
     {
-        if (currentState == GameState.PLAYING) {
+        player.setDirection(left, right, up, down);
+        player.update(this, dt);
+        // Update Enemies
+        if (currentState == GameState.PLAYING)
+        {
             player.setDirection(left, right, up, down);
             player.update(this, dt);
             player.getCurrentWeapon().update(dt);
-            if (!player.isAlive()) {
+            for (Enemy enemy : enemies)
+            {
+                enemy.update(this, dt, player);
+            }
+            if (!player.isAlive())
+            {
                 currentState = GameState.GAME_OVER;
             }
         }
@@ -102,7 +148,8 @@ public class Main extends GameEngine
 
     @Override public void paintComponent()
     {
-        if (currentState == GameState.PLAYING) {
+        if (currentState == GameState.PLAYING)
+        {
             changeBackgroundColor(black);
             clearBackground(width(), height());
 
@@ -160,13 +207,18 @@ public class Main extends GameEngine
             String weaponName = currentWeapon.getName();
             changeColor(green);
             drawText(width() - 120, height() - 70, weaponName, "Arial", 16);
-            if(currentWeapon.isUnlimitedAmmo()){
+            if (currentWeapon.isUnlimitedAmmo())
+            {
                 drawText(width() - 100, height() - 10, "\u221E", "Arial", 60);
-            }else{
+            }
+            else
+            {
                 String ammoText = currentWeapon.getCurrentMagAmmo() + " / " + currentWeapon.getTotalAmmo();
                 drawText(width() - 120, height() - 20, ammoText, "Arial", 30);
             }
-        } else if (currentState == GameState.GAME_OVER) {
+        }
+        else if (currentState == GameState.GAME_OVER)
+        {
             changeBackgroundColor(black);
             clearBackground(width(), height());
             changeColor(red);
@@ -174,43 +226,93 @@ public class Main extends GameEngine
             changeColor(white);
             drawCenteredText(height / 2 + 50, "Press Enter to restart", "Arial", 30);
         }
+        // --- RENDER ENEMIES ---
+        for (Enemy enemy : enemies)
+        {
+            enemy.render(this, player, raycaster.getRayDistancesArray());
+            enemy.drawOnMinimap(this);
+        }
+
+        // --- MINIMAP OVERLAY ---
+        final int MINI_MAP_SIZE = 128;
+        int miniTileSize = MINI_MAP_SIZE / gameMap.getWidth();
+
+        // Position minimap at top-right corner with some padding
+        int offsetX = width() - MINI_MAP_SIZE - 10; // 10 px from right
+        int offsetY = 10;                           // 10 px from top
+
+        // Draw minimap border (outside blackout)
+        changeColor(white);
+        drawRectangle(offsetX - 1, offsetY - 1, MINI_MAP_SIZE + 2, MINI_MAP_SIZE + 2);
+
+        // Optionally draw minimap background inside border
+        changeColor(new Color(20, 20, 20, 180)); // semi-transparent dark fill
+        drawSolidRectangle(offsetX, offsetY, MINI_MAP_SIZE, MINI_MAP_SIZE);
+
+        // Draw the minimap tiles, blacking out those outside vision radius
+        int visionRadius = 7;
+        gameMap.draw(this, miniTileSize, offsetX, offsetY, player.getX(), player.getY(), visionRadius, TILE_SIZE);
+
+        // Draw player on minimap
+        changeColor(white);
+        double px = player.getX() / TILE_SIZE * miniTileSize + offsetX;
+        double py = player.getY() / TILE_SIZE * miniTileSize + offsetY;
+        drawSolidCircle(px, py, 4);
+
+        // Draw player facing direction line
+        double lineLength = 10;
+        double endX = px + Math.cos(player.getAngle()) * lineLength;
+        double endY = py + Math.sin(player.getAngle()) * lineLength;
+        drawLine(px, py, endX, endY);
+
+        for (Enemy enemy : enemies)
+        {
+            enemy.drawOnMinimap(this);
+        }
     }
 
-    public void drawCenteredText(double y, String s, String font, int size) {
+    public void drawCenteredText(double y, String s, String font, int size)
+    {
         mGraphics.setFont(new Font(font, Font.PLAIN, size));
         FontMetrics metrics = mGraphics.getFontMetrics();
         int textWidth = metrics.stringWidth(s);
         int x = (width - textWidth) / 2;
-        mGraphics.drawString(s, x, (int) y);
+        mGraphics.drawString(s, x, (int)y);
     }
 
-    @Override public void keyPressed(KeyEvent e) {
-        if (currentState == GameState.PLAYING) {
-            switch (e.getKeyCode()) {
-                case KeyEvent.VK_Q:
-                    player.previousWeapon();
-                    break;
-                case KeyEvent.VK_E:
-                    player.nextWeapon();
-                    break;
-                case KeyEvent.VK_M:
-                    player.takeDamage(10);  //Simulates Damage
-                    break;
-                case KeyEvent.VK_R:
-                    player.getCurrentWeapon().reload();
-                    break;
-                case KeyEvent.VK_1:
-                    player.pickupWeapon("Laser Rifle"); //Simulates Picking up the Laser Rifle
-                    break;
-                case KeyEvent.VK_2:
-                    player.pickupWeapon("Laser Shotgun");  //Simulates Picking up the Shotgun
-                    break;
-                default:
-                    updateDirection(e, true);
-                    break;
+    @Override public void keyPressed(KeyEvent e)
+    {
+        if (currentState == GameState.PLAYING)
+        {
+            switch (e.getKeyCode())
+            {
+            case KeyEvent.VK_Q:
+                player.previousWeapon();
+                break;
+            case KeyEvent.VK_E:
+                player.nextWeapon();
+                break;
+            case KeyEvent.VK_M:
+                player.takeDamage(10); // Simulates Damage
+                break;
+            case KeyEvent.VK_R:
+                player.getCurrentWeapon().reload();
+                break;
+            case KeyEvent.VK_1:
+                player.pickupWeapon("Laser Rifle"); // Simulates Picking up the Laser Rifle
+                break;
+            case KeyEvent.VK_2:
+                player.pickupWeapon("Laser Shotgun"); // Simulates Picking up the Shotgun
+                break;
+            default:
+                updateDirection(e, true);
+                break;
             }
-        } else if (currentState == GameState.GAME_OVER) {
-            if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+        }
+        else if (currentState == GameState.GAME_OVER)
+        {
+            if (e.getKeyCode() == KeyEvent.VK_ENTER)
+            {
                 restartGame();
             }
         }
@@ -218,7 +320,8 @@ public class Main extends GameEngine
 
     @Override public void keyReleased(KeyEvent e)
     {
-        if (currentState == GameState.PLAYING) {
+        if (currentState == GameState.PLAYING)
+        {
             updateDirection(e, false);
         }
     }
@@ -234,9 +337,17 @@ public class Main extends GameEngine
         }
     }
 
-    @Override public void mouseMoved(java.awt.event.MouseEvent e) {
-        if (currentState == GameState.PLAYING) {
-            // Camera/Player sensitivity
+    public void mouseMoved(java.awt.event.MouseEvent e)
+    {
+        if (currentState == GameState.PLAYING && player != null)
+        {
+            if (warpingMouse)
+            {
+                // Ignore this event caused by the robot mouseMove call
+                warpingMouse = false;
+                return;
+            }
+
             double sensitivityX = 0.002;
             double sensitivityY = 0.5;
 
@@ -246,7 +357,8 @@ public class Main extends GameEngine
             int windowCenterX = getFrame().getLocationOnScreen().x + width / 2;
             int windowCenterY = getFrame().getLocationOnScreen().y + height / 2;
 
-            if (firstMouseUpdate) {
+            if (firstMouseUpdate)
+            {
                 lastMouseX = mouseX;
                 lastMouseY = mouseY;
                 firstMouseUpdate = false;
@@ -258,33 +370,41 @@ public class Main extends GameEngine
             player.rotate(deltaX * sensitivityX);
             player.setVerticalLookOffset(player.getVerticalLookOffset() + deltaY * sensitivityY);
 
-            if (robot != null) {
+            if (robot != null)
+            {
+                warpingMouse = true; // Set flag before warping
                 robot.mouseMove(windowCenterX, windowCenterY);
                 lastMouseX = windowCenterX;
                 lastMouseY = windowCenterY;
-            } else {
+            }
+            else
+            {
                 lastMouseX = mouseX;
                 lastMouseY = mouseY;
             }
         }
     }
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
-        if (currentState == GameState.PLAYING && e.getButton() == MouseEvent.BUTTON1) {
-            if (player.getCurrentWeapon().tryFire()) {
+    @Override public void mouseClicked(MouseEvent e)
+    {
+        if (currentState == GameState.PLAYING && e.getButton() == MouseEvent.BUTTON1)
+        {
+            if (player.getCurrentWeapon().tryFire())
+            {
                 System.out.println("Fired " + player.getCurrentWeapon().getName());
                 // Actual shooting logic coming soon ...
             }
         }
     }
 
-
-    private void initializePlayer() {
-        outer:
-        for (int y = 0; y < GameMap.HEIGHT; y++) {
-            for (int x = 0; x < GameMap.WIDTH; x++) {
-                if (gameMap.isWalkableTile(x, y)) {
+    private void initializePlayer()
+    {
+    outer:
+        for (int y = 0; y < GameMap.HEIGHT; y++)
+        {
+            for (int x = 0; x < GameMap.WIDTH; x++)
+            {
+                if (gameMap.isWalkableTile(x, y))
+                {
                     double px = x * TILE_SIZE + TILE_SIZE / 2.0;
                     double py = y * TILE_SIZE + TILE_SIZE / 2.0;
                     player = new Player(px, py, gameMap, TILE_SIZE);
@@ -294,7 +414,8 @@ public class Main extends GameEngine
         }
     }
 
-    private void restartGame(){
+    private void restartGame()
+    {
         initializePlayer();
         currentState = GameState.PLAYING;
         left = false;

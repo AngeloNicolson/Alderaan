@@ -3,35 +3,33 @@ import java.awt.Image;
 
 public class RayCaster
 {
-    //declare fields
+    // declare fields
     private GameMap map;
     private int tileSize; // tile size
     private GameAsset gameAsset;
 
-    private int numRays; //number of rays
-    private double fov; //field of view in radians
-    private double [] rayX; //array of final ray's X and Y end coordinates
-    private double [] rayY;
-    private double [] rayDistances; //array of final ray's length
-    private int [] wallType; //array to determine the type of wall
-    private Image [] imageWallSegment; //array of wall texture assigned to final ray
-
+    private int numRays;   // number of rays
+    private double fov;    // field of view in radians
+    private double[] rayX; // array of final ray's X and Y end coordinates
+    private double[] rayY;
+    private double[] rayDistances;    // array of final ray's length
+    private int[] wallType;           // array to determine the type of wall
+    private Image[] imageWallSegment; // array of wall texture assigned to final ray
 
     public RayCaster(GameMap map, int tileSize, GameAsset gameAsset)
     {
         this.map = map;
         this.tileSize = tileSize;
         this.gameAsset = gameAsset;
-        //initalise defaults
-        numRays = 1024; //default number of rays
-        fov = Math.toRadians(60); //default field of view
-        //initialise arrays for ray info
+        // initalise defaults
+        numRays = 1024;           // default number of rays
+        fov = Math.toRadians(60); // default field of view
+        // initialise arrays for ray info
         rayX = new double[numRays];
         rayY = new double[numRays];
         rayDistances = new double[numRays];
         imageWallSegment = new Image[numRays];
         wallType = new int[numRays];
-
     }
 
     public void castSingleRay(double px, double py, double rayAngle, int rayIndex)
@@ -64,7 +62,7 @@ public class RayCaster
             horStepX = horStepY / sinA * cosA;
 
             // Step along horizontal lines until hit or max distance
-            for (int i = 0; i < map.getHeight()+1; i++)
+            for (int i = 0; i < map.getHeight() + 1; i++)
             {
                 int tileX = (int)(horX / tileSize);
                 int tileY = (int)(horY / tileSize);
@@ -107,7 +105,7 @@ public class RayCaster
             vertStepY = vertStepX / cosA * sinA;
 
             // Step along vertical lines until hit or max distance
-            for (int i = 0; i < map.getWidth()+1; i++)
+            for (int i = 0; i < map.getWidth() + 1; i++)
             {
                 int tileX = (int)(vertX / tileSize);
                 int tileY = (int)(vertY / tileSize);
@@ -126,24 +124,31 @@ public class RayCaster
         }
 
         // -- Save info of shorter ray (closest wall hit), to arrays --
-        if (horHit && vertHit){
-            if (vertDist < horDist) { //indicates a vertical wall
+        if (horHit && vertHit)
+        {
+            if (vertDist < horDist)
+            { // indicates a vertical wall
                 saveRay(rayIndex, vertX, vertY, vertDist, vertWallType, true);
-            } else { //indicates (vertDist > hortDist), which is a horizontal wall
+            }
+            else
+            { // indicates (vertDist > hortDist), which is a horizontal wall
                 saveRay(rayIndex, horX, horY, horDist, horWallType, false);
             }
-        }  
-        else if (horHit){ //indicates 
+        }
+        else if (horHit)
+        { // indicates
             saveRay(rayIndex, horX, horY, horDist, horWallType, false);
         }
-        else if (vertHit){
+        else if (vertHit)
+        {
             saveRay(rayIndex, vertX, vertY, vertDist, vertWallType, true);
         }
 
-        //System.out.println("DEBUG: ray"+rayIndex+", x:"+rayX[rayIndex]+" y:"+rayY[rayIndex]+" wt:"+wallType[rayIndex]);
+        // System.out.println("DEBUG: ray"+rayIndex+", x:"+rayX[rayIndex]+" y:"+rayY[rayIndex]+"
+        // wt:"+wallType[rayIndex]);
     }
 
-    //method to cast the rays, and the ray info is stored in the local arrays
+    // method to cast the rays, and the ray info is stored in the local arrays
     public void castRays(double px, double py, double playerAngle)
     {
         double startAngle = playerAngle - fov / 2.0;
@@ -156,15 +161,16 @@ public class RayCaster
         }
     }
 
-    //draws the output of the rays casted
-    public void draw(GameEngine ge, double px, double py, double playerAngle, double verticalLookOffset){
-        
-        //cast the rays, and the ray info is stored in the local arrays
+    // draws the output of the rays casted
+    public void draw(GameEngine ge, double px, double py, double playerAngle, double verticalLookOffset)
+    {
+
+        // cast the rays, and the ray info is stored in the local arrays
         castRays(px, py, playerAngle);
 
-        double stripWidth = (double) ge.width() / numRays; // full width for 2.5D view
+        double stripWidth = (double)ge.width() / numRays; // full width for 2.5D view
 
-        //loop to draw each ray
+        // loop to draw each ray
         for (int i = 0; i < numRays; i++)
         {
             double dist = rayDistances[i];
@@ -172,24 +178,25 @@ public class RayCaster
             double angleOffset = (i - numRays / 2.0) * (fov / numRays);
             dist *= Math.cos(angleOffset);
 
-            double lineHeight = (tileSize * 640) / dist; //set the lineHeight of each display line
-            double maxLineHeight = ge.height() * 8; //set maxheight is 8 times the view
+            double lineHeight = (tileSize * 640) / dist; // set the lineHeight of each display line
+            double maxLineHeight = ge.height() * 8;      // set maxheight is 8 times the view
             if (lineHeight > maxLineHeight)
                 lineHeight = maxLineHeight;
             double yOffset = (ge.height() - lineHeight) / 2 - verticalLookOffset;
 
-            //draw textured walls
+            // draw textured walls
             ge.drawImage(imageWallSegment[i], i * stripWidth, yOffset, stripWidth, lineHeight);
 
-            //draw fade overlay
+            // draw fade overlay
             double maxDistance = 200;
             double brightness = Math.max(0.1, 1.0 - dist / maxDistance);
             int shade = (int)(brightness * 255);
             shade = 255 - shade;
             ge.changeColor(new Color(0, 0, 0, shade));
 
-            ge.drawSolidRectangle(i * stripWidth, yOffset-1, stripWidth, lineHeight+1); //extended this by y-1 and h+1 to make sure it covers the wall image underneath
-
+            ge.drawSolidRectangle(
+                i * stripWidth, yOffset - 1, stripWidth,
+                lineHeight + 1); // extended this by y-1 and h+1 to make sure it covers the wall image underneath
         }
     }
 
@@ -200,63 +207,81 @@ public class RayCaster
     }
 
     // Helper method to save the ray info into ray arrays
-    private void saveRay(int rayIndex, double finalX, double finalY, double finalDist, int finalWallType, boolean isVert){
+    private void saveRay(int rayIndex, double finalX, double finalY, double finalDist, int finalWallType,
+                         boolean isVert)
+    {
         rayX[rayIndex] = finalX;
         rayY[rayIndex] = finalY;
         rayDistances[rayIndex] = finalDist;
         wallType[rayIndex] = finalWallType;
-        if (isVert) {
+        if (isVert)
+        {
             imageWallSegment[rayIndex] = matchWallTexture(wallType[rayIndex], rayY[rayIndex]);
-        } else{
+        }
+        else
+        {
             imageWallSegment[rayIndex] = matchWallTexture(wallType[rayIndex], rayX[rayIndex]);
         }
-        
     }
 
     // Helper method to determine wall image strip
-    private Image matchWallTexture(int wallType, double rayCoord){
-        int wallImageX; //represents the local coordates of the side of the wall tile
-        int maxSize = gameAsset.getWALLPIXELSIZE(); //this should return 128
-        wallImageX = (int) ((rayCoord%tileSize)/tileSize * maxSize); //convert the ray's coord to local coord of tile
-        wallImageX = wallImageX<0 ? 0 : wallImageX; //checks wallImageX is within 0 to 127 bound
-        wallImageX = wallImageX>maxSize-1 ? maxSize-1 : wallImageX;
+    private Image matchWallTexture(int wallType, double rayCoord)
+    {
+        int wallImageX;                             // represents the local coordates of the side of the wall tile
+        int maxSize = gameAsset.getWALLPIXELSIZE(); // this should return 128
+        wallImageX = (int)((rayCoord % tileSize) / tileSize * maxSize); // convert the ray's coord to local coord of
+                                                                        // tile
+        wallImageX = wallImageX < 0 ? 0 : wallImageX;                   // checks wallImageX is within 0 to 127 bound
+        wallImageX = wallImageX > maxSize - 1 ? maxSize - 1 : wallImageX;
         return gameAsset.getImageStripsScifiWall(wallType, wallImageX);
-        //return gameAsset.getImageStripsTestWall(wallImageX); //gets the wall image strip
+        // return gameAsset.getImageStripsTestWall(wallImageX); //gets the wall image strip
     }
 
     // Getters
-    public double getRayX(int i) {
-        if (0<=i && i<rayX.length) {
+    public double getRayX(int i)
+    {
+        if (0 <= i && i < rayX.length)
+        {
             return rayX[i];
         }
         return 0.0;
     }
 
-    public double getRayY(int i) {
-        if (0<=i && i<rayY.length) {
+    public double getRayY(int i)
+    {
+        if (0 <= i && i < rayY.length)
+        {
             return rayY[i];
         }
         return 0.0;
     }
 
-    public double getRayDistances(int i) {
-        if (0<=i && i<rayDistances.length) {
+    public double getRayDistances(int i)
+    {
+        if (0 <= i && i < rayDistances.length)
+        {
             return rayDistances[i];
         }
         return 0.0;
     }
+    public double[] getRayDistancesArray()
+    {
+        return rayDistances;
+    }
 
     // Setters
-    public void setMap(GameMap map) {
+    public void setMap(GameMap map)
+    {
         this.map = map;
     }
 
-    public void setNumRays(int numRays) {
+    public void setNumRays(int numRays)
+    {
         this.numRays = numRays;
     }
 
-    public void setFov(double fov) {
+    public void setFov(double fov)
+    {
         this.fov = fov;
     }
-    
 }

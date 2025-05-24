@@ -27,6 +27,22 @@ public class Main extends GameEngine
     private boolean firstMouseUpdate = true;
     private Robot robot;
 
+    // Weapon Drawing
+    private double weaponX;
+    private double weaponY;
+
+    //declare audio assets
+    private AudioClip soundLazer1;
+    private AudioClip soundLazer2;
+    private AudioClip soundLazer3;
+    private AudioClip soundLazerHit;
+    private AudioClip soundPlayerInjured;
+    private AudioClip soundPlayerWalking;
+    private AudioClip soundWinDoorOpen;
+    private AudioClip soundWinLaunch;
+    private AudioClip soundZombieDeath;
+    private AudioClip soundZombieNeutral;
+
     public static void main(String[] args)
     {
         Main main = new Main();
@@ -80,10 +96,27 @@ public class Main extends GameEngine
         // Hide cursor with transparent image
         BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImg, new Point(0, 0), "blank cursor");
-        getFrame().setCursor(blankCursor);
+        //getFrame().setCursor(blankCursor);
 
         lastMouseX = width / 2;
         lastMouseY = height / 2;
+
+        // Initialise Weapon Default Position
+        weaponX = width()/2+200;
+        weaponY = height()-200;
+        
+        // Initialise Audio Assets
+        soundLazer1 = loadAudio("assets/audio/SoundLazer1.wav");
+        soundLazer2 = loadAudio("assets/audio/SoundLazer2.wav");
+        soundLazer3 = loadAudio("assets/audio/SoundLazer3.wav");
+        soundLazerHit = loadAudio("assets/audio/SoundLazerHit.wav");
+        soundPlayerInjured = loadAudio("assets/audio/SoundPlayerInjured.wav");
+        soundPlayerWalking = loadAudio("assets/audio/SoundPlayerWalking.wav");
+        soundWinDoorOpen = loadAudio("assets/audio/SoundWinDoorOpen.wav");
+        soundWinLaunch = loadAudio("assets/audio/SoundWinLaunch.wav");
+        soundZombieDeath = loadAudio("assets/audio/SoundZombieDeath.wav");
+        soundZombieNeutral = loadAudio("assets/audio/SoundZombieNeutral.wav");
+
     }
 
     @Override public void update(double dt)
@@ -104,6 +137,10 @@ public class Main extends GameEngine
         double verticalLookOffset = player.getVerticalLookOffset();
 
         raycaster.draw(this, playerX, playerY, playerAngle, verticalLookOffset);
+
+        // --- Weapon ---
+
+        drawImage(gameAsset.getLazerPistol(), weaponX, weaponY, 512, 512);
 
         // --- MINIMAP OVERLAY ---
         final int MINI_MAP_SIZE = 128;
@@ -157,6 +194,16 @@ public class Main extends GameEngine
         case KeyEvent.VK_W -> up = pressed;
         case KeyEvent.VK_S -> down = pressed;
         }
+    }
+
+    // Method for when mouse button is pressed
+    public void mousePressed(java.awt.event.MouseEvent e){
+        playAudio(soundLazer1);
+    }
+
+    // Method for when mouse button is released
+    public void mouseReleased(java.awt.event.MouseEvent e){
+
     }
 
     @Override public void mouseMoved(java.awt.event.MouseEvent e)

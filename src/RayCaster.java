@@ -13,6 +13,7 @@ public class RayCaster
     private double [] rayX; //array of final ray's X and Y end coordinates
     private double [] rayY;
     private double [] rayDistances; //array of final ray's length
+    private int [] wallType; //array to determine the type of wall
     private Image [] imageWallSegment; //array of wall texture assigned to final ray
 
 
@@ -29,6 +30,7 @@ public class RayCaster
         rayY = new double[numRays];
         rayDistances = new double[numRays];
         imageWallSegment = new Image[numRays];
+        wallType = new int[numRays];
 
     }
 
@@ -42,6 +44,7 @@ public class RayCaster
         double horStepX = 0, horStepY = 0;
         boolean horHit = false;
         double horDist = 1000;
+        int horWallType = 1;
 
         if (Math.abs(sinA) > 0.0001)
         { // ray not perfectly horizontal
@@ -61,7 +64,7 @@ public class RayCaster
             horStepX = horStepY / sinA * cosA;
 
             // Step along horizontal lines until hit or max distance
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < map.getHeight()+1; i++)
             {
                 int tileX = (int)(horX / tileSize);
                 int tileY = (int)(horY / tileSize);
@@ -70,6 +73,7 @@ public class RayCaster
                 {
                     horHit = true;
                     horDist = distance(px, py, horX, horY);
+                    horWallType = map.getWallType(tileX, tileY);
                     break;
                 }
 
@@ -83,6 +87,7 @@ public class RayCaster
         double vertStepX = 0, vertStepY = 0;
         boolean vertHit = false;
         double vertDist = 1000;
+        int vertWallType = 1;
 
         if (Math.abs(cosA) > 0.0001)
         { // ray not perfectly vertical
@@ -102,7 +107,7 @@ public class RayCaster
             vertStepY = vertStepX / cosA * sinA;
 
             // Step along vertical lines until hit or max distance
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < map.getWidth()+1; i++)
             {
                 int tileX = (int)(vertX / tileSize);
                 int tileY = (int)(vertY / tileSize);
@@ -111,6 +116,7 @@ public class RayCaster
                 {
                     vertHit = true;
                     vertDist = distance(px, py, vertX, vertY);
+                    vertWallType = map.getWallType(tileX, tileY);
                     break;
                 }
 
@@ -122,31 +128,19 @@ public class RayCaster
         // -- Save info of shorter ray (closest wall hit), to arrays --
         if (horHit && vertHit){
             if (vertDist < horDist) { //indicates a vertical wall
-                rayX[rayIndex] = vertX;
-                rayY[rayIndex] = vertY;
-                rayDistances[rayIndex] = vertDist;
-                imageWallSegment[rayIndex] = matchWallTexture(rayY[rayIndex]);
+                saveRay(rayIndex, vertX, vertY, vertDist, vertWallType, true);
             } else { //indicates (vertDist > hortDist), which is a horizontal wall
-                rayX[rayIndex] = horX;
-                rayY[rayIndex] = horY;
-                rayDistances[rayIndex] = horDist;
-                imageWallSegment[rayIndex] = matchWallTexture(rayX[rayIndex]);
+                saveRay(rayIndex, horX, horY, horDist, horWallType, false);
             }
         }  
-        else if (horHit){
-            rayX[rayIndex] = horX;
-            rayY[rayIndex] = horY;
-            rayDistances[rayIndex] = horDist;
-            imageWallSegment[rayIndex] = matchWallTexture(rayX[rayIndex]);
+        else if (horHit){ //indicates 
+            saveRay(rayIndex, horX, horY, horDist, horWallType, false);
         }
         else if (vertHit){
-            rayX[rayIndex] = vertX;
-            rayY[rayIndex] = vertY;
-            rayDistances[rayIndex] = vertDist;
-            imageWallSegment[rayIndex] = matchWallTexture(rayY[rayIndex]);
+            saveRay(rayIndex, vertX, vertY, vertDist, vertWallType, true);
         }
 
-        //System.out.println("DEBUG: ray"+rayIndex+", x:"+rayX[rayIndex]+" y:"+rayY[rayIndex]);
+        //System.out.println("DEBUG: ray"+rayIndex+", x:"+rayX[rayIndex]+" y:"+rayY[rayIndex]+" wt:"+wallType[rayIndex]);
     }
 
     //method to cast the rays, and the ray info is stored in the local arrays
@@ -194,7 +188,7 @@ public class RayCaster
             shade = 255 - shade;
             ge.changeColor(new Color(0, 0, 0, shade));
 
-            ge.drawSolidRectangle(i * stripWidth, yOffset, stripWidth, lineHeight);
+            ge.drawSolidRectangle(i * stripWidth, yOffset-1, stripWidth, lineHeight+1); //extended this by y-1 and h+1 to make sure it covers the wall image underneath
 
         }
     }
@@ -205,14 +199,29 @@ public class RayCaster
         return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
     }
 
+    // Helper method to save the ray info into ray arrays
+    private void saveRay(int rayIndex, double finalX, double finalY, double finalDist, int finalWallType, boolean isVert){
+        rayX[rayIndex] = finalX;
+        rayY[rayIndex] = finalY;
+        rayDistances[rayIndex] = finalDist;
+        wallType[rayIndex] = finalWallType;
+        if (isVert) {
+            imageWallSegment[rayIndex] = matchWallTexture(wallType[rayIndex], rayY[rayIndex]);
+        } else{
+            imageWallSegment[rayIndex] = matchWallTexture(wallType[rayIndex], rayX[rayIndex]);
+        }
+        
+    }
+
     // Helper method to determine wall image strip
-    private Image matchWallTexture(double rayCoord){
+    private Image matchWallTexture(int wallType, double rayCoord){
         int wallImageX; //represents the local coordates of the side of the wall tile
         int maxSize = gameAsset.getWALLPIXELSIZE(); //this should return 128
         wallImageX = (int) ((rayCoord%tileSize)/tileSize * maxSize); //convert the ray's coord to local coord of tile
         wallImageX = wallImageX<0 ? 0 : wallImageX; //checks wallImageX is within 0 to 127 bound
         wallImageX = wallImageX>maxSize-1 ? maxSize-1 : wallImageX;
-        return gameAsset.getImageStripsTestWall(wallImageX); //gets the wall image strip
+        return gameAsset.getImageStripsScifiWall(wallType, wallImageX);
+        //return gameAsset.getImageStripsTestWall(wallImageX); //gets the wall image strip
     }
 
     // Getters

@@ -4,24 +4,31 @@ public class GameAsset {
 
     //declare variables for game assets
     private final int WALLPIXELSIZE = 128; //already pre determined by wall width
-    private Image imageTestWall;
-    private Image [] imageStripsTestWall;
+    private Image imageScifiWall;
+    private Image [][] imageStripsScifiWall;
+
 
     //constructor
     public GameAsset() {
         //initliase game asset variables
-        this.imageTestWall = GameEngine.loadImage("assets/visual/TestWall.png");
-        imageStripsTestWall = new Image[WALLPIXELSIZE];
-        for (int i = 0; i < WALLPIXELSIZE; i++) {
-            imageStripsTestWall[i] = GameEngine.subImage(imageTestWall, i, 0, 1, WALLPIXELSIZE);
+        imageScifiWall = GameEngine.loadImage("assets/visual/ScifiWall.png");
+        imageStripsScifiWall = new Image[5][WALLPIXELSIZE];
+        for (int wallType = 0; wallType < 5; wallType++) {
+            for (int x = 0; x < WALLPIXELSIZE; x++) {
+                imageStripsScifiWall[wallType][x] = GameEngine.subImage(imageScifiWall, wallType*WALLPIXELSIZE + x, 0, 1, WALLPIXELSIZE);
+            }
         }
-
     }
 
     //get one strip of the wall texture based on the width value
     //the width value should be derived from local coords of where on a wall block a ray hits
-    public Image getImageStripsTestWall(int x) {
-        return imageStripsTestWall[x];
+    //also accounts for the wallType, which is 1 to 5
+    public Image getImageStripsScifiWall(int wallType, int x){
+        wallType--; //map goes from 1 to 5, but walls are from 0 to 4 in array
+        if (wallType >4) {
+            wallType = 1;
+        }
+        return imageStripsScifiWall[wallType][x];
     }
 
     public int getWALLPIXELSIZE() {

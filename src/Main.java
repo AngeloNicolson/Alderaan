@@ -80,7 +80,7 @@ public class Main extends GameEngine
         // Hide cursor with transparent image
         BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImg, new Point(0, 0), "blank cursor");
-        //getFrame().setCursor(blankCursor);
+        getFrame().setCursor(blankCursor);
 
         lastMouseX = width / 2;
         lastMouseY = height / 2;

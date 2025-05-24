@@ -134,6 +134,6 @@ public class Player extends Entity
         if (tileX < 0 || tileY < 0 || tileX >= map.getWidth() || tileY >= map.getHeight())
             return true;
 
-        return map.getGrid()[tileY][tileX] == 1;
+        return map.getGrid()[tileY][tileX] >= 1;
     }
 }

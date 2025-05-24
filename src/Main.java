@@ -13,6 +13,7 @@ public class Main extends GameEngine
     private GameMap gameMap;
     private Player player;
     private RayCaster raycaster;
+    private GameAsset gameAsset;
 
     // Window size
     private int width = 1024;
@@ -61,7 +62,10 @@ public class Main extends GameEngine
             }
         }
 
-        raycaster = new RayCaster(gameMap, TILE_SIZE);
+        // Initalise ray caster and associated objects
+        gameAsset = new GameAsset();
+
+        raycaster = new RayCaster(gameMap, TILE_SIZE, gameAsset);
 
         // Initialize Robot for mouse control
         try
@@ -99,30 +103,7 @@ public class Main extends GameEngine
         double playerAngle = player.getAngle();
         double verticalLookOffset = player.getVerticalLookOffset();
 
-        int numRays = 256;
-        double fov = Math.toRadians(60);
-
-        double[] rayDistances = raycaster.castRays(playerX, playerY, playerAngle, numRays, fov);
-
-        double stripWidth = (double)width / numRays; // full width for 2.5D view
-
-        for (int i = 0; i < numRays; i++)
-        {
-            double dist = rayDistances[i];
-            // Correct fisheye
-            double angleOffset = (i - numRays / 2.0) * (fov / numRays);
-            dist *= Math.cos(angleOffset);
-
-            double lineHeight = (TILE_SIZE * 320) / dist;
-            double yOffset = (height - lineHeight) / 2 - verticalLookOffset;
-
-            double maxDistance = 500;
-            double brightness = Math.max(0.2, 1.0 - dist / maxDistance);
-            int shade = (int)(brightness * 255);
-            changeColor(new Color(shade, shade, shade));
-
-            drawSolidRectangle(i * stripWidth, yOffset, stripWidth + 1, lineHeight);
-        }
+        raycaster.draw(this, playerX, playerY, playerAngle, verticalLookOffset);
 
         // --- MINIMAP OVERLAY ---
         final int MINI_MAP_SIZE = 128;

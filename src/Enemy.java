@@ -40,11 +40,11 @@ public class Enemy extends Entity
         this.mapS = mapS;
 
         this.ai = new EnemyAI(map, mapS);
-        this.spriteSheet = GameEngine.loadImage("assets/visual/Storm_Trooper_Placeholder.png");
+        this.spriteSheet = GameEngine.loadImage("assets/visual/pixil-frame-death.png");
 
-        this.frameWidth = 72;
-        this.frameHeight = 72;
-
+        // Updated frame size for new spritesheet dimensions: 683 x 1024
+        this.frameWidth = 113;       // 683 / 6 columns (approximate)
+        this.frameHeight = 1024 / 9; // Updated: 9 rows instead of 8
         animations = new Image[3][]; // IDLE, ALERTED, CHASING
 
         // IDLE row 7 has 5 columns (directions)
@@ -178,7 +178,7 @@ public class Enemy extends Entity
 
         int dir8;
 
-        // Handiling AI states and assigning directioons for sprite frames
+        // Handling AI states and assigning directions for sprite frames
         if (stateIndex == EnemyAI.AIState.CHASING.ordinal())
         {
             // Chasing animation: 8 directions with 6 frames each

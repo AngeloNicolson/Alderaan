@@ -62,12 +62,20 @@ public class EnemyAI
             targetX = player.getX();
             targetY = player.getY();
 
+            // Check if enemy can still see the player (no walls blocking)
+            if (!canSeePlayer(enemy.getX(), enemy.getY(), player.getX(), player.getY()))
+            {
+                // Lost sight — switch back to IDLE
+                state = AIState.IDLE;
+                break;
+            }
+
             if (dist > stopDistance)
             {
                 enemy.moveToward(targetX, targetY, dt);
             }
 
-            enemy.smoothFacePlayer(player, Math.PI * 2, dt); // turn speed = 2pi a second
+            enemy.smoothFacePlayer(player, Math.PI * 2, dt); // turn speed = 2 pi a second
 
             if (dist > maxChaseDistance)
             {

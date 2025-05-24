@@ -41,7 +41,7 @@ public class Main extends GameEngine
         gameMap = new GameMap();
 
         // Load map from file
-        if (!gameMap.loadFromFile("maps/PlayGround_Map.txt"))
+        if (!gameMap.loadFromFile("maps/map_1.txt"))
         {
             System.err.println("Error loading map.txt, exiting.");
             System.exit(1);
@@ -164,16 +164,16 @@ public class Main extends GameEngine
 
             drawSolidRectangle(i * stripWidth, yOffset, stripWidth + 1, lineHeight);
         }
-
-        // --- MINIMAP OVERLAY ---
-        final int MINI_MAP_SIZE = 128;
-        int miniTileSize = MINI_MAP_SIZE / gameMap.getWidth();
         // --- RENDER ENEMIES ---
         for (Enemy enemy : enemies)
         {
             enemy.render(this, player, rayDistances);
             enemy.drawOnMinimap(this);
         }
+
+        // --- MINIMAP OVERLAY ---
+        final int MINI_MAP_SIZE = 128;
+        int miniTileSize = MINI_MAP_SIZE / gameMap.getWidth();
 
         // Position minimap at top-right corner with some padding
         int offsetX = width() - MINI_MAP_SIZE - 10; // 10 px from right

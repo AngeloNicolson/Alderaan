@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 
 public class Player extends Entity
 {
@@ -9,6 +11,13 @@ public class Player extends Entity
     private GameMap map;
     private int mapS;
 
+    private int maxHealth = 100;
+    private int currentHealth;
+
+    private List<Weapon> weapons;
+    private int currentWeapon;
+    private boolean unlimitedAmmo; // True for Laser Pistol
+
     public Player(double x, double y, GameMap map, int mapS)
     {
         super(x, y);
@@ -17,6 +26,12 @@ public class Player extends Entity
 
         this.map = map;
         this.mapS = mapS;
+        this.currentHealth = maxHealth;
+
+        weapons = new ArrayList<>();
+        weapons.add(new Weapon("Laser Pistol", 10, 5, 10, 0, true));
+        currentWeapon = 0;
+        unlimitedAmmo = true; // Default weapon - Laser pistol has unlimited ammo
     }
 
     public void setDirection(boolean left, boolean right, boolean up, boolean down)
@@ -139,6 +154,92 @@ public class Player extends Entity
         if (tileX < 0 || tileY < 0 || tileX >= map.getWidth() || tileY >= map.getHeight())
             return true;
 
-        return map.getGrid()[tileY][tileX] == 1;
+        return map.getGrid()[tileY][tileX] >= 1;
+    }
+
+    // Health Logic
+
+    public void takeDamage(int amt)
+    {
+        currentHealth -= amt;
+        if (currentHealth < 0)
+        {
+            currentHealth = 0;
+        }
+    }
+
+    public void restoreHealth(int amt)
+    {
+        currentHealth += amt;
+        if (currentHealth > maxHealth)
+        {
+            currentHealth = maxHealth;
+        }
+    }
+
+    public boolean isAlive()
+    {
+        return currentHealth > 0;
+    }
+
+    public int getHealth()
+    {
+        return currentHealth;
+    }
+
+    public int getMaxHealth()
+    {
+        return maxHealth;
+    }
+
+    public float getHealthPercentage()
+    {
+        return (float)currentHealth / maxHealth;
+    }
+
+    // Weapon Management
+    public void nextWeapon()
+    {
+        if (weapons.size() > 1)
+        {
+            currentWeapon = (currentWeapon + 1) % weapons.size();
+        }
+    }
+
+    public void previousWeapon()
+    {
+        if (weapons.size() > 1)
+        {
+            currentWeapon = (currentWeapon - 1 + weapons.size()) % weapons.size();
+        }
+    }
+
+    public Weapon getCurrentWeapon()
+    {
+        return weapons.get(currentWeapon);
+    }
+
+    public void pickupWeapon(String weaponName)
+    {
+        for (Weapon w : weapons)
+        {
+            if (w.getName().equals(weaponName))
+            {
+                if (!w.isUnlimitedAmmo())
+                {
+                    w.addAmmo(30); // Add 30 ammo if weapon exists
+                }
+                return;
+            }
+        }
+        // Add new weapon if not found
+        if (weaponName.equals("Laser Rifle"))
+        {
+            weapons.add(new Weapon("Laser Rifle", 15, 10, 30, 90, false));
+        }
+        else if (weaponName.equals("Laser Shotgun"))
+        {
+            weapons.add(new Weapon("Laser Shotgun", 25, 2, 8, 24, false));
+        }
     }
 }

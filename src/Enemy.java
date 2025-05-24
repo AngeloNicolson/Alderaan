@@ -42,7 +42,8 @@ public class Enemy extends Entity
         this.ai = new EnemyAI(map, mapS);
         this.spriteSheet = GameEngine.loadImage("assets/visual/pixil-frame-death.png");
 
-        // Updated frame size for new spritesheet dimensions: 683 x 1024
+        // Updated frame size for new spritesheet dimensions: 683 x 1024 (TODO: Change back once we get final
+        // spritesheets)
         this.frameWidth = 113;       // 683 / 6 columns (approximate)
         this.frameHeight = 1024 / 9; // Updated: 9 rows instead of 8
         animations = new Image[3][]; // IDLE, ALERTED, CHASING

@@ -1,3 +1,4 @@
+import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -31,6 +32,38 @@ public class GameMap
                     if (c == '1')
                     {
                         grid[y][x] = 1;
+                    }
+                    else if (c == '2')
+                    {
+                        grid[y][x] = 2;
+                    }
+                    else if (c == '3')
+                    {
+                        grid[y][x] = 3;
+                    }
+                    else if (c == '4')
+                    {
+                        grid[y][x] = 4;
+                    }
+                    else if (c == '5')
+                    {
+                        grid[y][x] = 5;
+                    }
+                    else if (c == '6')
+                    {
+                        grid[y][x] = 6;
+                    }
+                    else if (c == '7')
+                    {
+                        grid[y][x] = 7;
+                    }
+                    else if (c == '8')
+                    {
+                        grid[y][x] = 8;
+                    }
+                    else if (c == '9')
+                    {
+                        grid[y][x] = 9;
                     }
                     else if (c == '0')
                     {
@@ -90,8 +123,8 @@ public class GameMap
 
                 if (distance <= visionRadius)
                 {
-                    if (grid[y][x] == 1)
-                        engine.changeColor(engine.red);
+                    if (grid[y][x] >= 1)
+                        engine.changeColor(Color.gray);
                     else
                         engine.changeColor(engine.black);
                 }
@@ -110,6 +143,18 @@ public class GameMap
     {
         if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT)
             return true;
-        return grid[y][x] == 1;
+        return grid[y][x] >= 1;
+    }
+
+    public int getWallType(int x, int y)
+    {
+        if (isWall(x, y)) {
+            if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT){
+                return 1; //default points outside the map to be wall one
+            }
+            return grid[y][x];
+        }
+        return 1; //default to one
+        
     }
 }

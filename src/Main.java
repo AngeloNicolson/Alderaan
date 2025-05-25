@@ -9,6 +9,9 @@ import javax.swing.*;
 
 enum GameState
 {
+    MAIN_MENU,
+    HOW_TO_PLAY,
+    CREDITS,
     PLAYING,
     GAME_OVER,
 }
@@ -21,8 +24,7 @@ public class Main extends GameEngine
     private RayCaster raycaster;
     private List<Enemy> enemies = new ArrayList<>();
     private GameAsset gameAsset;
-    private GameState currentState = GameState.PLAYING;
-
+    private GameState currentState;
     // Window size
     private int width = 1024;
     private int height = 512;
@@ -36,7 +38,7 @@ public class Main extends GameEngine
     private Robot robot;
     private boolean warpingMouse = false;
 
-    private double weaponX = 300;
+    private double weaponX = 400;
     private double weaponY = 300;
     private List<Weapon> initialWeapons;
     private AudioClip soundLazer1;
@@ -49,6 +51,48 @@ public class Main extends GameEngine
     private AudioClip soundWinLaunch;
     private AudioClip soundZombieDeath;
     private AudioClip soundZombieNeutral;
+    private Image lazerRifleSprite;
+    private Image lazerShotgunSprite;
+    private Image menuBackground;
+    private List<Button> menuButtons = new ArrayList<>();
+    private Cursor blankCursor;
+    private Cursor defaultCursor;
+    private Image gameOverBackground;
+    private Button backButton;
+
+
+    private class Button{
+        int x, y, width, height;
+        String text;
+        Runnable action;
+
+        Button(int x, int y, int width, int height, String text, Runnable action){
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.text = text;
+            this.action = action;
+        }
+
+        boolean contains(int mx, int my){
+            return mx >= x && mx <= x + width && my >= y && my <= y + height;
+        }
+
+        void draw()
+        {
+            changeColor(new Color(30, 30, 30, 150));
+            drawSolidRectangle(x, y, width, height);
+            changeColor(white);
+            mGraphics.setFont(new Font("Arial", Font.PLAIN, 20));
+            FontMetrics metrics = mGraphics.getFontMetrics();
+            int textWidth = metrics.stringWidth(text);
+            int textHeight = metrics.getHeight();
+            int textX = x + (width - textWidth) / 2;
+            int textY = y + (height - textHeight) / 2 + metrics.getAscent();
+            mGraphics.drawString(text, textX, textY);
+        }
+    }
 
     public static void main(String[] args)
     {
@@ -68,8 +112,42 @@ public class Main extends GameEngine
 
     @Override public void init()
     {
-        gameMap = new GameMap();
+        currentState = GameState.MAIN_MENU;
+        menuBackground = loadImage("assets/visual/menuWallpaper.png");
+        gameOverBackground = loadImage("assets/visual/gameOverScreen.png");
+        int buttonWidth = 200;
+        int buttonHeight = 50;
+        int buttonSpacing = 20;
+        int startX = (width - buttonWidth) / 2;
+        int startY = (height - ( buttonHeight + 3 * buttonSpacing)) / 2;
 
+        menuButtons.add(new Button(startX, startY, buttonWidth, buttonHeight, "Start Game", () -> {
+            currentState = GameState.PLAYING;
+        }));
+
+        menuButtons.add(new Button(startX, startY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight, "How to Play", () -> {
+            currentState = GameState.HOW_TO_PLAY;
+        }));
+        menuButtons.add(new Button(startX, startY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "Settings", () -> {
+            // Placeholder
+        }));
+        menuButtons.add(new Button(startX, startY + 3 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "Credits", () -> {
+            currentState = GameState.CREDITS;
+        }));
+
+        int backButtonWidth = 100;
+        int backButtonHeight = 40;
+        int backButtonX = (width - backButtonWidth) / 2;
+        int backButtonY = height - 100;
+        backButton = new Button(backButtonX, backButtonY, backButtonWidth, backButtonHeight, "Back", () -> {
+            currentState = GameState.MAIN_MENU;
+        });
+
+
+        BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+        blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImg, new Point(0, 0), "blank cursor");
+        defaultCursor = Cursor.getDefaultCursor();
+        gameMap = new GameMap();
         // Load map from file
         if (!gameMap.loadFromFile("maps/map_1.txt"))
         {
@@ -89,6 +167,7 @@ public class Main extends GameEngine
         soundWinLaunch = loadAudio("assets/audio/SoundWinLaunch.wav");
         soundZombieDeath = loadAudio("assets/audio/SoundZombieDeath.wav");
         soundZombieNeutral = loadAudio("assets/audio/SoundZombieNeutral.wav");
+
 
         // Collect all walkable tiles for enemy spawning
         List<int[]> walkableTiles = new ArrayList<>();
@@ -118,7 +197,8 @@ public class Main extends GameEngine
 
         // Initialize ray caster and associated objects
         gameAsset = new GameAsset();
-
+        lazerRifleSprite = gameAsset.getLazerRifle();
+        lazerShotgunSprite = gameAsset.getLazerShotgun();
         Image laserPistolSprite = gameAsset.getLazerPistol();
         AudioClip laserPistolSound = soundLazer1;
         Weapon laserPistol = new Weapon("Laser Pistol", 10, 5, 10, 0, true, laserPistolSprite, laserPistolSound);
@@ -141,11 +221,6 @@ public class Main extends GameEngine
         {
             System.err.println("Failed to initialize Robot: " + e.getMessage());
         }
-
-        // Hide cursor with transparent image
-        BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-        Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImg, new Point(0, 0), "blank cursor");
-        getFrame().setCursor(blankCursor);
 
         lastMouseX = width / 2;
         lastMouseY = height / 2;
@@ -174,7 +249,22 @@ public class Main extends GameEngine
 
     @Override public void paintComponent()
     {
-        if (currentState == GameState.PLAYING) {
+        if(currentState == GameState.MAIN_MENU){
+            getFrame().setCursor(defaultCursor);
+            drawMainMenu();
+        }
+        else if(currentState == GameState.HOW_TO_PLAY){
+            getFrame().setCursor(defaultCursor);
+            drawImage(menuBackground, 0, 0, width, height);
+            drawHowToPlay();
+        }
+        else if(currentState == GameState.CREDITS){
+            getFrame().setCursor(defaultCursor);
+            drawImage(menuBackground, 0, 0, width, height);
+            drawCredits();
+        }
+        else if (currentState == GameState.PLAYING) {
+            getFrame().setCursor(blankCursor);
             changeBackgroundColor(black);
             clearBackground(width(), height());
 
@@ -220,7 +310,7 @@ public class Main extends GameEngine
             //Weapon Sprite
             Weapon currentWeapon = player.getCurrentWeapon();
             if (currentWeapon.getSprite() != null) {
-                drawImage(currentWeapon.getSprite(), weaponX, weaponY, 512, 512);
+                drawImage(currentWeapon.getSprite(), weaponX, weaponY, 400, 400);
             }
             // Weapon name and ammo count on bottom right
             String weaponName = currentWeapon.getName();
@@ -268,22 +358,90 @@ public class Main extends GameEngine
         }
         else if (currentState == GameState.GAME_OVER)
         {
-            changeBackgroundColor(black);
-            clearBackground(width(), height());
-            changeColor(red);
-            drawCenteredText(height / 2, "GAME OVER", "Arial", 50);
-            changeColor(white);
-            drawCenteredText(height / 2 + 50, "Press Enter to restart", "Arial", 30);
+            getFrame().setCursor(defaultCursor);
+            drawImage(gameOverBackground, 0, 0, width, height);
+            changeColor(new Color(200, 200, 200));
+            drawCenteredText(height / 2 + 100, "GAME OVER", "Arial", 50, Font.BOLD);
+            drawCenteredText(height / 2 + 150, "Press Enter to restart", "Arial", 30, Font.PLAIN);
         }
     }
 
-    public void drawCenteredText(double y, String s, String font, int size)
+    public void drawCenteredText(double y, String s, String font, int size, int style)
     {
-        mGraphics.setFont(new Font(font, Font.PLAIN, size));
+        mGraphics.setFont(new Font(font, style, size));
         FontMetrics metrics = mGraphics.getFontMetrics();
         int textWidth = metrics.stringWidth(s);
         int x = (width - textWidth) / 2;
         mGraphics.drawString(s, x, (int)y);
+    }
+
+    private void drawMainMenu()
+    {
+        drawImage(menuBackground, 0, 0, width, height);
+
+        mGraphics.setFont(new Font("Arial", Font.BOLD, 60));
+        FontMetrics metrics = mGraphics.getFontMetrics();
+        String title = "Alderaan";
+        int textWidth = metrics.stringWidth(title);
+        int x = (width -textWidth) / 2;
+        int y = 60;
+        changeColor(white);
+        drawBoldText( x, y, title, "Arial", 60);
+
+        mGraphics.setFont(new Font("Arial", Font.PLAIN, 30));
+        metrics = mGraphics.getFontMetrics();
+        String subtitle = "The Last Man on Alderaan";
+        textWidth = metrics.stringWidth(subtitle);
+        x = (width - textWidth) / 2;
+        y = 100;
+        changeColor(new Color(200, 200, 200)); // Light gray
+        mGraphics.drawString(subtitle, x, y);
+        for (Button button : menuButtons)
+        {
+            button.draw();
+        }
+    }
+
+    private void drawHowToPlay(){
+        changeColor(new Color(200, 200, 200));
+        drawCenteredText(60, "How to Play", "Arial", 40, Font.BOLD);
+        String[] lines = {
+                "You need to get to a life pod, and get off this ship.",
+                " ",
+                " ",
+                "Controls:",
+                "WASD: Move",
+                "Mouse: Look around",
+                "Left Click: Shoot",
+                "Q/E: Switch weapons",
+                "R: Reload",
+                "Reach the life pod to win"
+        };
+        int lineHeight = 30;
+        int startY = 100;
+        for(int i = 0; i < lines.length; i++) {
+                drawCenteredText(startY + i * lineHeight, lines[i], "Arial", 20, Font.PLAIN);
+        }
+        backButton.draw();
+    }
+
+    private void drawCredits()
+    {
+        changeColor(new Color(200, 200, 200));
+        drawCenteredText(60, "Credits", "Arial", 40, Font.BOLD);
+        String[] lines = {
+                "Angelo Nicolson",
+                "Joshua Sim",
+                "Kale Twist",
+                "Johnny Chadwick-Watt"
+        };
+        int lineHeight = 30;
+        int startY = 120;
+        for (int i = 0; i < lines.length; i++)
+        {
+            drawCenteredText(startY + i * lineHeight, lines[i], "Arial", 20, Font.PLAIN);
+        }
+        backButton.draw();
     }
 
     @Override public void keyPressed(KeyEvent e)
@@ -305,10 +463,14 @@ public class Main extends GameEngine
                 player.getCurrentWeapon().reload();
                 break;
             case KeyEvent.VK_1:
-                player.pickupWeapon("Laser Rifle"); // Simulates Picking up the Laser Rifle
+                Weapon laserRifle = new Weapon("Laser Rifle", 15, 10, 30, 90, false,
+                        lazerRifleSprite, soundLazer2);
+                player.pickupWeapon(laserRifle);// Simulates Picking up the Laser Rifle
                 break;
             case KeyEvent.VK_2:
-                player.pickupWeapon("Laser Shotgun"); // Simulates Picking up the Shotgun
+                Weapon laserShotgun = new Weapon("Laser Shotgun", 25, 2, 8, 24, false,
+                        lazerShotgunSprite, soundLazer3);
+                player.pickupWeapon(laserShotgun); // Simulates Picking up the Shotgun
                 break;
             default:
                 updateDirection(e, true);
@@ -392,7 +554,29 @@ public class Main extends GameEngine
     }
     @Override public void mouseClicked(MouseEvent e)
     {
-        if (currentState == GameState.PLAYING && e.getButton() == MouseEvent.BUTTON1)
+        if(currentState == GameState.MAIN_MENU){
+            int mx = e.getX();
+            int my = e.getY();
+            for (Button button : menuButtons)
+            {
+                if (button.contains(mx, my))
+                {
+                    button.action.run();
+                    break;
+                }
+            }
+        }
+
+        else if(currentState == GameState.HOW_TO_PLAY || currentState == GameState.CREDITS){
+            int mx = e.getX();
+            int my = e.getY();
+            if (backButton.contains(mx, my))
+            {
+                backButton.action.run();
+            }
+        }
+
+        else if (currentState == GameState.PLAYING && e.getButton() == MouseEvent.BUTTON1)
         {
             Weapon currentWeapon = player.getCurrentWeapon();
             if (player.getCurrentWeapon().tryFire())

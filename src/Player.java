@@ -16,7 +16,8 @@ public class Player extends Entity
 
     private List<Weapon> weapons;
     private int currentWeapon;
-    private boolean unlimitedAmmo; // True for Laser Pistol
+
+
 
     public Player(double x, double y, GameMap map, int mapS, List<Weapon> initialWeapons)
     {
@@ -123,12 +124,14 @@ public class Player extends Entity
 
         // Collision detection for X movement
         // Check if moving to nextX would hit a wall, if not, update x
-        if (!isWall(nextX, y))
+        if (!isWall(nextX, y)){
             x = nextX;
+        }
         // Collision detection for Y movement
         // Check if moving to nextY would hit a wall, if not, update y
-        if (!isWall(x, nextY))
+        if (!isWall(x, nextY)){
             y = nextY;
+        }
     }
 
     public void draw(GameEngine engine)
@@ -155,6 +158,8 @@ public class Player extends Entity
 
         return map.getGrid()[tileY][tileX] >= 1;
     }
+
+
 
     // Health Logic
 
@@ -218,12 +223,11 @@ public class Player extends Entity
         return weapons.get(currentWeapon);
     }
 
-    public void pickupWeapon(String weaponName)
+    public void pickupWeapon(Weapon newWeapon)
     {
         for (Weapon w : weapons)
         {
-            if (w.getName().equals(weaponName))
-            {
+            if (w.getName().equals(newWeapon.getName())) {
                 if (!w.isUnlimitedAmmo())
                 {
                     w.addAmmo(30); // Add 30 ammo if weapon exists
@@ -231,14 +235,6 @@ public class Player extends Entity
                 return;
             }
         }
-        // Add new weapon if not found
-        if (weaponName.equals("Laser Rifle"))
-        {
-            weapons.add(new Weapon("Laser Rifle", 15, 10, 30, 90, false, null, null));
-        }
-        else if (weaponName.equals("Laser Shotgun"))
-        {
-            weapons.add(new Weapon("Laser Shotgun", 25, 2, 8, 24, false, null, null));
-        }
+        weapons.add(newWeapon);
     }
 }

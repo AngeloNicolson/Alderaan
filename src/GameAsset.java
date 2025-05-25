@@ -7,6 +7,8 @@ public class GameAsset {
     private Image imageScifiWall;
     private Image [][] imageStripsScifiWall;
     private Image lazerPistol;
+    private Image lazerRifle;
+    private Image lazerShotgun;
 
 
     //constructor
@@ -20,6 +22,8 @@ public class GameAsset {
             }
         }
         lazerPistol = GameEngine.loadImage("assets/visual/LazerPistol.png");
+        lazerRifle = GameEngine.loadImage("assets/visual/LazerRifle.png");
+        lazerShotgun = GameEngine.loadImage("assets/visual/LazerShotGun.png");
     }
 
     //get one strip of the wall texture based on the width value
@@ -38,6 +42,8 @@ public class GameAsset {
     }
 
     public Image getLazerPistol(){return lazerPistol;}
+    public Image getLazerRifle(){return lazerRifle;}
+    public Image getLazerShotgun(){return lazerShotgun;}
 
     
 }

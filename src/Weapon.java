@@ -1,3 +1,5 @@
+import java.awt.*;
+
 public class Weapon {
     private String name;
     private int damage;
@@ -8,8 +10,11 @@ public class Weapon {
     private int totalAmmo;
     private boolean isUnlimitedAmmo;
     private double fireCooldown = 0.0;
+    private Image sprite;
+    private GameEngine.AudioClip fireSound;
 
-    public Weapon(String name, int damage, int fireRate, int magSize, int initialTotalAmmo, boolean isUnlimitedAmmo) {
+    public Weapon(String name, int damage, int fireRate, int magSize, int initialTotalAmmo,
+                  boolean isUnlimitedAmmo, Image sprite, GameEngine.AudioClip fireSound) {
         this.name = name;
         this.damage = damage;
         this.fireRate = fireRate;
@@ -22,6 +27,8 @@ public class Weapon {
             this.currentMag = magSize;
             this.totalAmmo = initialTotalAmmo;
         }
+        this.sprite = sprite;
+        this.fireSound = fireSound;
     }
 
     public void update(double dt){
@@ -70,5 +77,7 @@ public class Weapon {
     public int getCurrentMagAmmo(){return currentMag;}
     public int getTotalAmmo(){return totalAmmo;}
     public boolean isUnlimitedAmmo() {return isUnlimitedAmmo;}
+    public Image getSprite() { return sprite; }
+    public GameEngine.AudioClip getFireSound() { return fireSound; }
 
 }

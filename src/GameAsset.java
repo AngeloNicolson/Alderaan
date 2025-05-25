@@ -6,6 +6,7 @@ public class GameAsset {
     private final int WALLPIXELSIZE = 128; //already pre determined by wall width
     private Image imageScifiWall;
     private Image [][] imageStripsScifiWall;
+    private Image lazerPistol;
 
 
     //constructor
@@ -18,6 +19,7 @@ public class GameAsset {
                 imageStripsScifiWall[wallType][x] = GameEngine.subImage(imageScifiWall, wallType*WALLPIXELSIZE + x, 0, 1, WALLPIXELSIZE);
             }
         }
+        lazerPistol = GameEngine.loadImage("assets/visual/LazerPistol.png");
     }
 
     //get one strip of the wall texture based on the width value
@@ -34,6 +36,8 @@ public class GameAsset {
     public int getWALLPIXELSIZE() {
         return WALLPIXELSIZE;
     }
+
+    public Image getLazerPistol(){return lazerPistol;}
 
     
 }

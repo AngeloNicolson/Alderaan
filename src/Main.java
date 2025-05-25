@@ -1,11 +1,4 @@
-import java.awt.AWTException;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Point;
-import java.awt.Robot;
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -43,6 +36,20 @@ public class Main extends GameEngine
     private Robot robot;
     private boolean warpingMouse = false;
 
+    private double weaponX = 300;
+    private double weaponY = 300;
+    private List<Weapon> initialWeapons;
+    private AudioClip soundLazer1;
+    private AudioClip soundLazer2;
+    private AudioClip soundLazer3;
+    private AudioClip soundLazerHit;
+    private AudioClip soundPlayerInjured;
+    private AudioClip soundPlayerWalking;
+    private AudioClip soundWinDoorOpen;
+    private AudioClip soundWinLaunch;
+    private AudioClip soundZombieDeath;
+    private AudioClip soundZombieNeutral;
+
     public static void main(String[] args)
     {
         Main main = new Main();
@@ -72,8 +79,16 @@ public class Main extends GameEngine
 
         setWindowSize(width, height);
 
-        // Initialize player once using your method
-        initializePlayer();
+        soundLazer1 = loadAudio("assets/audio/SoundLazer1.wav");
+        soundLazer2 = loadAudio("assets/audio/SoundLazer2.wav");
+        soundLazer3 = loadAudio("assets/audio/SoundLazer3.wav");
+        soundLazerHit = loadAudio("assets/audio/SoundLazerHit.wav");
+        soundPlayerInjured = loadAudio("assets/audio/SoundPlayerInjured.wav");
+        soundPlayerWalking = loadAudio("assets/audio/SoundPlayerWalking.wav");
+        soundWinDoorOpen = loadAudio("assets/audio/SoundWinDoorOpen.wav");
+        soundWinLaunch = loadAudio("assets/audio/SoundWinLaunch.wav");
+        soundZombieDeath = loadAudio("assets/audio/SoundZombieDeath.wav");
+        soundZombieNeutral = loadAudio("assets/audio/SoundZombieNeutral.wav");
 
         // Collect all walkable tiles for enemy spawning
         List<int[]> walkableTiles = new ArrayList<>();
@@ -103,6 +118,17 @@ public class Main extends GameEngine
 
         // Initialize ray caster and associated objects
         gameAsset = new GameAsset();
+
+        Image laserPistolSprite = gameAsset.getLazerPistol();
+        AudioClip laserPistolSound = soundLazer1;
+        Weapon laserPistol = new Weapon("Laser Pistol", 10, 5, 10, 0, true, laserPistolSprite, laserPistolSound);
+        List<Weapon> initialWeapons = new ArrayList<>();
+        initialWeapons.add(laserPistol);
+        this.initialWeapons = initialWeapons;
+
+        // Initialize player once using your method
+        initializePlayer(initialWeapons);
+
 
         raycaster = new RayCaster(gameMap, TILE_SIZE, gameAsset);
 
@@ -148,8 +174,7 @@ public class Main extends GameEngine
 
     @Override public void paintComponent()
     {
-        if (currentState == GameState.PLAYING)
-        {
+        if (currentState == GameState.PLAYING) {
             changeBackgroundColor(black);
             clearBackground(width(), height());
 
@@ -181,6 +206,50 @@ public class Main extends GameEngine
             int visionRadius = 5;
             gameMap.draw(this, miniTileSize, offsetX, offsetY, player.getX(), player.getY(), visionRadius, TILE_SIZE);
 
+
+
+            // Health bar on bottom left
+            changeColor(Color.gray);
+            drawSolidRectangle(10, height() - 50, 200, 20);
+            changeColor(green);
+            float healthPercentage = player.getHealthPercentage();
+            drawSolidRectangle(10, height() - 50, 200 * healthPercentage, 20);
+            changeColor(white);
+            drawText(220, height() - 30, player.getHealth() + "/" + player.getMaxHealth(), "Arial", 20);
+
+            //Weapon Sprite
+            Weapon currentWeapon = player.getCurrentWeapon();
+            if (currentWeapon.getSprite() != null) {
+                drawImage(currentWeapon.getSprite(), weaponX, weaponY, 512, 512);
+            }
+            // Weapon name and ammo count on bottom right
+            String weaponName = currentWeapon.getName();
+            changeColor(green);
+            drawText(width() - 120, height() - 70, weaponName, "Arial", 16);
+            if (currentWeapon.isUnlimitedAmmo()) {
+                drawText(width() - 100, height() - 10, "\u221E", "Arial", 60);
+            } else {
+                String ammoText = currentWeapon.getCurrentMagAmmo() + " / " + currentWeapon.getTotalAmmo();
+                drawText(width() - 120, height() - 20, ammoText, "Arial", 30);
+            }
+            // --- RENDER ENEMIES ---
+            for (Enemy enemy : enemies) {
+                enemy.render(this, player, raycaster.getRayDistancesArray());
+                enemy.drawOnMinimap(this);
+            }
+
+            // Draw minimap border (outside blackout)
+            changeColor(white);
+            drawRectangle(offsetX - 1, offsetY - 1, MINI_MAP_SIZE + 2, MINI_MAP_SIZE + 2);
+
+            // Optionally draw minimap background inside border
+            changeColor(new Color(20, 20, 20, 180)); // semi-transparent dark fill
+            drawSolidRectangle(offsetX, offsetY, MINI_MAP_SIZE, MINI_MAP_SIZE);
+
+            // Draw the minimap tiles, blacking out those outside vision radius
+            visionRadius = 7;
+            gameMap.draw(this, miniTileSize, offsetX, offsetY, player.getX(), player.getY(), visionRadius, TILE_SIZE);
+
             // Draw player on minimap
             changeColor(white);
             double px = player.getX() / TILE_SIZE * miniTileSize + offsetX;
@@ -193,28 +262,8 @@ public class Main extends GameEngine
             double endY = py + Math.sin(player.getAngle()) * lineLength;
             drawLine(px, py, endX, endY);
 
-            // Health bar on bottom left
-            changeColor(Color.gray);
-            drawSolidRectangle(10, height() - 50, 200, 20);
-            changeColor(green);
-            float healthPercentage = player.getHealthPercentage();
-            drawSolidRectangle(10, height() - 50, 200 * healthPercentage, 20);
-            changeColor(white);
-            drawText(220, height() - 30, player.getHealth() + "/" + player.getMaxHealth(), "Arial", 20);
-
-            // Weapon name and ammo count on bottom right
-            Weapon currentWeapon = player.getCurrentWeapon();
-            String weaponName = currentWeapon.getName();
-            changeColor(green);
-            drawText(width() - 120, height() - 70, weaponName, "Arial", 16);
-            if (currentWeapon.isUnlimitedAmmo())
-            {
-                drawText(width() - 100, height() - 10, "\u221E", "Arial", 60);
-            }
-            else
-            {
-                String ammoText = currentWeapon.getCurrentMagAmmo() + " / " + currentWeapon.getTotalAmmo();
-                drawText(width() - 120, height() - 20, ammoText, "Arial", 30);
+            for (Enemy enemy : enemies) {
+                enemy.drawOnMinimap(this);
             }
         }
         else if (currentState == GameState.GAME_OVER)
@@ -225,49 +274,6 @@ public class Main extends GameEngine
             drawCenteredText(height / 2, "GAME OVER", "Arial", 50);
             changeColor(white);
             drawCenteredText(height / 2 + 50, "Press Enter to restart", "Arial", 30);
-        }
-        // --- RENDER ENEMIES ---
-        for (Enemy enemy : enemies)
-        {
-            enemy.render(this, player, raycaster.getRayDistancesArray());
-            enemy.drawOnMinimap(this);
-        }
-
-        // --- MINIMAP OVERLAY ---
-        final int MINI_MAP_SIZE = 128;
-        int miniTileSize = MINI_MAP_SIZE / gameMap.getWidth();
-
-        // Position minimap at top-right corner with some padding
-        int offsetX = width() - MINI_MAP_SIZE - 10; // 10 px from right
-        int offsetY = 10;                           // 10 px from top
-
-        // Draw minimap border (outside blackout)
-        changeColor(white);
-        drawRectangle(offsetX - 1, offsetY - 1, MINI_MAP_SIZE + 2, MINI_MAP_SIZE + 2);
-
-        // Optionally draw minimap background inside border
-        changeColor(new Color(20, 20, 20, 180)); // semi-transparent dark fill
-        drawSolidRectangle(offsetX, offsetY, MINI_MAP_SIZE, MINI_MAP_SIZE);
-
-        // Draw the minimap tiles, blacking out those outside vision radius
-        int visionRadius = 7;
-        gameMap.draw(this, miniTileSize, offsetX, offsetY, player.getX(), player.getY(), visionRadius, TILE_SIZE);
-
-        // Draw player on minimap
-        changeColor(white);
-        double px = player.getX() / TILE_SIZE * miniTileSize + offsetX;
-        double py = player.getY() / TILE_SIZE * miniTileSize + offsetY;
-        drawSolidCircle(px, py, 4);
-
-        // Draw player facing direction line
-        double lineLength = 10;
-        double endX = px + Math.cos(player.getAngle()) * lineLength;
-        double endY = py + Math.sin(player.getAngle()) * lineLength;
-        drawLine(px, py, endX, endY);
-
-        for (Enemy enemy : enemies)
-        {
-            enemy.drawOnMinimap(this);
         }
     }
 
@@ -388,26 +394,26 @@ public class Main extends GameEngine
     {
         if (currentState == GameState.PLAYING && e.getButton() == MouseEvent.BUTTON1)
         {
+            Weapon currentWeapon = player.getCurrentWeapon();
             if (player.getCurrentWeapon().tryFire())
             {
                 System.out.println("Fired " + player.getCurrentWeapon().getName());
+                if(currentWeapon.getFireSound() != null){
+                    playAudio(currentWeapon.getFireSound());
+                }
                 // Actual shooting logic coming soon ...
             }
         }
     }
 
-    private void initializePlayer()
-    {
-    outer:
-        for (int y = 0; y < GameMap.HEIGHT; y++)
-        {
-            for (int x = 0; x < GameMap.WIDTH; x++)
-            {
-                if (gameMap.isWalkableTile(x, y))
-                {
+    private void initializePlayer(List<Weapon> weapons) {
+        outer:
+        for (int y = 0; y < GameMap.HEIGHT; y++) {
+            for (int x = 0; x < GameMap.WIDTH; x++) {
+                if (gameMap.isWalkableTile(x, y)) {
                     double px = x * TILE_SIZE + TILE_SIZE / 2.0;
                     double py = y * TILE_SIZE + TILE_SIZE / 2.0;
-                    player = new Player(px, py, gameMap, TILE_SIZE);
+                    player = new Player(px, py, gameMap, TILE_SIZE, weapons);
                     break outer;
                 }
             }
@@ -416,7 +422,7 @@ public class Main extends GameEngine
 
     private void restartGame()
     {
-        initializePlayer();
+        initializePlayer(initialWeapons);
         currentState = GameState.PLAYING;
         left = false;
         right = false;

@@ -18,7 +18,7 @@ public class Player extends Entity
     private int currentWeapon;
     private boolean unlimitedAmmo; // True for Laser Pistol
 
-    public Player(double x, double y, GameMap map, int mapS)
+    public Player(double x, double y, GameMap map, int mapS, List<Weapon> initialWeapons)
     {
         super(x, y);
         this.angle = 0;
@@ -29,9 +29,8 @@ public class Player extends Entity
         this.currentHealth = maxHealth;
 
         weapons = new ArrayList<>();
-        weapons.add(new Weapon("Laser Pistol", 10, 5, 10, 0, true));
+        this.weapons = new ArrayList<>(initialWeapons);
         currentWeapon = 0;
-        unlimitedAmmo = true; // Default weapon - Laser pistol has unlimited ammo
     }
 
     public void setDirection(boolean left, boolean right, boolean up, boolean down)
@@ -235,11 +234,11 @@ public class Player extends Entity
         // Add new weapon if not found
         if (weaponName.equals("Laser Rifle"))
         {
-            weapons.add(new Weapon("Laser Rifle", 15, 10, 30, 90, false));
+            weapons.add(new Weapon("Laser Rifle", 15, 10, 30, 90, false, null, null));
         }
         else if (weaponName.equals("Laser Shotgun"))
         {
-            weapons.add(new Weapon("Laser Shotgun", 25, 2, 8, 24, false));
+            weapons.add(new Weapon("Laser Shotgun", 25, 2, 8, 24, false, null, null));
         }
     }
 }

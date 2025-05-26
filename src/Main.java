@@ -16,6 +16,7 @@ enum GameState
     GAME_OVER,
 }
 
+
 public class Main extends GameEngine
 {
     public static final int TILE_SIZE = 32;
@@ -24,6 +25,7 @@ public class Main extends GameEngine
     private RayCaster raycaster;
     private List<Enemy> enemies = new ArrayList<>();
     private List<HealthItem> healthItems = new ArrayList<>();
+    private List<WeaponItem> weaponItems = new ArrayList<>();
     private GameAsset gameAsset;
     private GameState currentState;
     // Window size
@@ -52,6 +54,7 @@ public class Main extends GameEngine
     private AudioClip soundWinLaunch;
     private AudioClip soundZombieDeath;
     private AudioClip soundZombieNeutral;
+    private AudioClip soundPickupItem;
     private Image lazerRifleSprite;
     private Image lazerShotgunSprite;
     private Image menuBackground;
@@ -92,6 +95,15 @@ public class Main extends GameEngine
             int textX = x + (width - textWidth) / 2;
             int textY = y + (height - textHeight) / 2 + metrics.getAscent();
             mGraphics.drawString(text, textX, textY);
+        }
+    }
+
+    private static class RenderableObject {
+        Object obj;
+        double distance;
+        RenderableObject(Object obj, double distance) {
+            this.obj = obj;
+            this.distance = distance;
         }
     }
 
@@ -168,6 +180,7 @@ public class Main extends GameEngine
         soundWinLaunch = loadAudio("assets/audio/SoundWinLaunch.wav");
         soundZombieDeath = loadAudio("assets/audio/SoundZombieDeath.wav");
         soundZombieNeutral = loadAudio("assets/audio/SoundZombieNeutral.wav");
+        soundPickupItem = loadAudio("assets/audio/SoundPickupItem.wav");
 
 
         // Collect all walkable tiles for enemy spawning
@@ -220,6 +233,26 @@ public class Main extends GameEngine
             healthItems.add(new HealthItem(hx, hy, gameAsset.getHealthItemSprite()));
         }
 
+        //Lazer Rifle
+        if (!availableTiles.isEmpty()) {
+            int index = rand.nextInt(availableTiles.size());
+            int[] tile = availableTiles.remove(index);
+            double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
+            double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
+            Weapon lazerRifle = new Weapon("Laser Rifle", 15, 10, 30, 90, false, lazerRifleSprite, soundLazer2);
+            weaponItems.add(new WeaponItem(wx, wy, lazerRifleSprite, lazerRifle));
+        }
+
+        //Lazer Shotgun
+        if (!availableTiles.isEmpty()) {
+            int index = rand.nextInt(availableTiles.size());
+            int[] tile = availableTiles.remove(index);
+            double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
+            double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
+            Weapon lazerShotgun = new Weapon("Laser Shotgun", 25, 2, 8, 24, false, lazerShotgunSprite, soundLazer3);
+            weaponItems.add(new WeaponItem(wx, wy, lazerShotgunSprite, lazerShotgun));
+        }
+
         //Initialize Player
         initializePlayer(initialWeapons);
 
@@ -263,7 +296,20 @@ public class Main extends GameEngine
                     double distance = Math.sqrt(dx * dx + dy * dy);
                     if (distance < TILE_SIZE / 2) { // the pickup range
                         healthItem.consume(player);
-                        //playAudio(soundHealthPickup); //to be added
+                        playAudio(soundPickupItem); //to be added
+                    }
+                }
+            }
+
+            //Check Weapon pickup
+            for (WeaponItem weaponItem : weaponItems) {
+                if (!weaponItem.isConsumed()) {
+                    double dx = player.getX() - weaponItem.getX();
+                    double dy = player.getY() - weaponItem.getY();
+                    double distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < TILE_SIZE / 2) {
+                        weaponItem.consume(player);
+                        playAudio(soundPickupItem);
                     }
                 }
             }
@@ -323,15 +369,46 @@ public class Main extends GameEngine
             int visionRadius = 5;
             gameMap.draw(this, miniTileSize, offsetX, offsetY, player.getX(), player.getY(), visionRadius, TILE_SIZE);
 
-            // --- RENDER HEALTH ---
+            //Render our objects
+            List<RenderableObject> toRender = new ArrayList<>();
+
             for (HealthItem healthItem : healthItems) {
-                healthItem.render(this, player, raycaster.getRayDistancesArray());
+                if (!healthItem.isConsumed()) {
+                    double dx = healthItem.getX() - player.getX();
+                    double dy = healthItem.getY() - player.getY();
+                    double distance = Math.sqrt(dx * dx + dy * dy);
+                    toRender.add(new RenderableObject(healthItem, distance));
+                }
             }
 
-            // --- RENDER ENEMIES ---
             for (Enemy enemy : enemies) {
-                enemy.render(this, player, raycaster.getRayDistancesArray());
-                enemy.drawOnMinimap(this);
+                double dx = enemy.getX() - player.getX();
+                double dy = enemy.getY() - player.getY();
+                double distance = Math.sqrt(dx * dx + dy * dy);
+                toRender.add(new RenderableObject(enemy, distance));
+            }
+
+            for (WeaponItem weaponItem : weaponItems) {
+                if (!weaponItem.isConsumed()) {
+                    double dx = weaponItem.getX() - player.getX();
+                    double dy = weaponItem.getY() - player.getY();
+                    double distance = Math.sqrt(dx * dx + dy * dy);
+                    toRender.add(new RenderableObject(weaponItem, distance));
+                }
+            }
+
+            //Sort by distance (we want farther objects spawning first)
+            toRender.sort((a,b) -> Double.compare(b.distance, a.distance));
+
+            //Render objects
+            for (RenderableObject ro : toRender) {
+                if (ro.obj instanceof HealthItem) {
+                    ((HealthItem) ro.obj).render(this, player, raycaster.getRayDistancesArray());
+                } else if (ro.obj instanceof Enemy) {
+                    ((Enemy) ro.obj).render(this, player, raycaster.getRayDistancesArray());
+                } else if (ro.obj instanceof WeaponItem) {
+                    ((WeaponItem) ro.obj).render(this, player, raycaster.getRayDistancesArray());
+                }
             }
 
             // Health bar on bottom left
@@ -493,16 +570,6 @@ public class Main extends GameEngine
                 break;
             case KeyEvent.VK_R:
                 player.getCurrentWeapon().reload();
-                break;
-            case KeyEvent.VK_1:
-                Weapon laserRifle = new Weapon("Laser Rifle", 15, 10, 30, 90, false,
-                        lazerRifleSprite, soundLazer2);
-                player.pickupWeapon(laserRifle);// Simulates Picking up the Laser Rifle
-                break;
-            case KeyEvent.VK_2:
-                Weapon laserShotgun = new Weapon("Laser Shotgun", 25, 2, 8, 24, false,
-                        lazerShotgunSprite, soundLazer3);
-                player.pickupWeapon(laserShotgun); // Simulates Picking up the Shotgun
                 break;
             default:
                 updateDirection(e, true);

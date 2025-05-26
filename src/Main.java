@@ -23,6 +23,7 @@ public class Main extends GameEngine
     private Player player;
     private RayCaster raycaster;
     private List<Enemy> enemies = new ArrayList<>();
+    private List<HealthItem> healthItems = new ArrayList<>();
     private GameAsset gameAsset;
     private GameState currentState;
     // Window size
@@ -195,6 +196,8 @@ public class Main extends GameEngine
             enemies.add(new Enemy(ex, ey, "", gameMap, TILE_SIZE));
         }
 
+
+
         // Initialize ray caster and associated objects
         gameAsset = new GameAsset();
         lazerRifleSprite = gameAsset.getLazerRifle();
@@ -206,7 +209,18 @@ public class Main extends GameEngine
         initialWeapons.add(laserPistol);
         this.initialWeapons = initialWeapons;
 
-        // Initialize player once using your method
+
+        //Spawn Health Items
+        List<int[]> availableTiles = new ArrayList<>(walkableTiles);
+        for(int i = 0; i<4 && !availableTiles.isEmpty(); i++){
+            int index = rand.nextInt(availableTiles.size());
+            int[] tile = availableTiles.remove(index);
+            double hx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
+            double hy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
+            healthItems.add(new HealthItem(hx, hy, gameAsset.getHealthItemSprite()));
+        }
+
+        //Initialize Player
         initializePlayer(initialWeapons);
 
 
@@ -239,6 +253,19 @@ public class Main extends GameEngine
             for (Enemy enemy : enemies)
             {
                 enemy.update(this, dt, player);
+            }
+
+            //Check health item pickup
+            for(HealthItem healthItem : healthItems){
+                if (!healthItem.isConsumed()) {
+                    double dx = player.getX() - healthItem.getX();
+                    double dy = player.getY() - healthItem.getY();
+                    double distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < TILE_SIZE / 2) { // the pickup range
+                        healthItem.consume(player);
+                        //playAudio(soundHealthPickup); //to be added
+                    }
+                }
             }
             if (!player.isAlive())
             {
@@ -296,7 +323,16 @@ public class Main extends GameEngine
             int visionRadius = 5;
             gameMap.draw(this, miniTileSize, offsetX, offsetY, player.getX(), player.getY(), visionRadius, TILE_SIZE);
 
+            // --- RENDER HEALTH ---
+            for (HealthItem healthItem : healthItems) {
+                healthItem.render(this, player, raycaster.getRayDistancesArray());
+            }
 
+            // --- RENDER ENEMIES ---
+            for (Enemy enemy : enemies) {
+                enemy.render(this, player, raycaster.getRayDistancesArray());
+                enemy.drawOnMinimap(this);
+            }
 
             // Health bar on bottom left
             changeColor(Color.gray);
@@ -322,11 +358,7 @@ public class Main extends GameEngine
                 String ammoText = currentWeapon.getCurrentMagAmmo() + " / " + currentWeapon.getTotalAmmo();
                 drawText(width() - 120, height() - 20, ammoText, "Arial", 30);
             }
-            // --- RENDER ENEMIES ---
-            for (Enemy enemy : enemies) {
-                enemy.render(this, player, raycaster.getRayDistancesArray());
-                enemy.drawOnMinimap(this);
-            }
+
 
             // Draw minimap border (outside blackout)
             changeColor(white);

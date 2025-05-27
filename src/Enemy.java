@@ -32,6 +32,15 @@ public class Enemy extends Entity
     private int walkBackDirection = 0; // -1 for left, +1 for right
     private double walkBackSpeed = 50;
 
+
+    //Attack
+    private double attackCooldown = 2.0;
+    private double cooldownTimer = 0;
+
+    //Health
+    private int maxHealth = 100;
+    private int currentHealth = maxHealth;
+
     public Enemy(double x, double y, String enemyType, GameMap map, int mapS)
     {
         super(x, y);
@@ -74,9 +83,34 @@ public class Enemy extends Entity
 
     @Override public void update(GameEngine engine, double dt, Player player)
     {
+        //Every frame we decrease cooldown timer
+        if (cooldownTimer > 0) {
+            cooldownTimer -= dt;
+        }
+
         EnemyAI.AIState oldState = ai.getState();
         ai.update(this, player, dt);
         EnemyAI.AIState newState = ai.getState();
+
+
+        //Apply melee damage
+        if(!isWalkingBack && ai.getState() == EnemyAI.AIState.CHASING){
+            double dx = player.getX() - x;
+            double dy = player.getY() - y;
+            double dist = Math.sqrt(dx * dx + dy * dy);
+            double stopDistance = 30;
+
+            if (dist <= stopDistance && cooldownTimer <= 0) {
+                player.takeDamage(10); // Deal 10 damage
+
+                // Play the injured sound
+                Main main = (Main) engine;
+                engine.playAudio(main.getSoundPlayerInjured());
+
+                cooldownTimer = attackCooldown; //reset cooldown
+            }
+        }
+
 
         // Detect flick from CHASING to ALERTED: trigger walkback
         if (oldState == EnemyAI.AIState.CHASING && newState == EnemyAI.AIState.ALERTED)
@@ -378,4 +412,19 @@ public class Enemy extends Entity
 
         g.drawLine(miniX, miniY, endX, endY);
     }
+
+    //Health and Damage logic
+    public void takeDamage(int amt)
+    {
+        currentHealth -= amt;
+        if (currentHealth < 0)
+        {
+            currentHealth = 0;
+        }
+    }
+
+    public boolean isAlive(){
+        return currentHealth > 0;
+    }
+
 }

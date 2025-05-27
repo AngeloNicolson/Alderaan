@@ -8,7 +8,9 @@ public class GameAsset {
     private Image [][] imageStripsScifiWall;
     private Image lazerPistol;
     private Image lazerRifle;
+    private Image lazerRiflePickup;
     private Image lazerShotgun;
+    private Image lazerShotgunPickup;
     private Image healthItemSprite;
 
 
@@ -24,8 +26,10 @@ public class GameAsset {
         }
         lazerPistol = GameEngine.loadImage("assets/visual/LazerPistol.png");
         lazerRifle = GameEngine.loadImage("assets/visual/LazerRifle.png");
+        lazerRiflePickup = GameEngine.loadImage("assets/visual/LazerRifleSide.png");
+        lazerShotgunPickup = GameEngine.loadImage("assets/visual/lazerShotgunSide.png");
         lazerShotgun = GameEngine.loadImage("assets/visual/LazerShotGun.png");
-        healthItemSprite = GameEngine.loadImage("assets/visual/wine.png");
+        healthItemSprite = GameEngine.loadImage("assets/visual/HealthPack.png");
     }
 
     //get one strip of the wall texture based on the width value
@@ -44,8 +48,10 @@ public class GameAsset {
     }
 
     public Image getLazerPistol(){return lazerPistol;}
+    public Image getLazerRiflePickup(){return lazerRiflePickup;}
     public Image getLazerRifle(){return lazerRifle;}
     public Image getLazerShotgun(){return lazerShotgun;}
+    public Image getLazerShotgunPickup(){return lazerShotgunPickup;}
     public Image getHealthItemSprite() {return healthItemSprite;}
 
     

@@ -41,6 +41,10 @@ public class Main extends GameEngine
     private Robot robot;
     private boolean warpingMouse = false;
 
+    //Key handling
+    private boolean qPressed = false;
+    private boolean ePressed = false;
+
     private double weaponX = 400;
     private double weaponY = 300;
     private List<Weapon> initialWeapons;
@@ -57,6 +61,8 @@ public class Main extends GameEngine
     private AudioClip soundPickupItem;
     private Image lazerRifleSprite;
     private Image lazerShotgunSprite;
+    private Image lazerRiflePickup;
+    private Image lazerShotgunPickup;
     private Image menuBackground;
     private List<Button> menuButtons = new ArrayList<>();
     private Cursor blankCursor;
@@ -215,6 +221,8 @@ public class Main extends GameEngine
         gameAsset = new GameAsset();
         lazerRifleSprite = gameAsset.getLazerRifle();
         lazerShotgunSprite = gameAsset.getLazerShotgun();
+        lazerRiflePickup = gameAsset.getLazerRiflePickup();
+        lazerShotgunPickup = gameAsset.getLazerShotgunPickup();
         Image laserPistolSprite = gameAsset.getLazerPistol();
         AudioClip laserPistolSound = soundLazer1;
         Weapon laserPistol = new Weapon("Laser Pistol", 10, 5, 10, 0, true, laserPistolSprite, laserPistolSound);
@@ -240,7 +248,7 @@ public class Main extends GameEngine
             double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
             double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
             Weapon lazerRifle = new Weapon("Laser Rifle", 15, 10, 30, 90, false, lazerRifleSprite, soundLazer2);
-            weaponItems.add(new WeaponItem(wx, wy, lazerRifleSprite, lazerRifle));
+            weaponItems.add(new WeaponItem(wx, wy, lazerRiflePickup, lazerRifle));
         }
 
         //Lazer Shotgun
@@ -250,7 +258,7 @@ public class Main extends GameEngine
             double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
             double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
             Weapon lazerShotgun = new Weapon("Laser Shotgun", 25, 2, 8, 24, false, lazerShotgunSprite, soundLazer3);
-            weaponItems.add(new WeaponItem(wx, wy, lazerShotgunSprite, lazerShotgun));
+            weaponItems.add(new WeaponItem(wx, wy, lazerShotgunPickup, lazerShotgun));
         }
 
         //Initialize Player
@@ -560,13 +568,16 @@ public class Main extends GameEngine
             switch (e.getKeyCode())
             {
             case KeyEvent.VK_Q:
-                player.previousWeapon();
+                if(!qPressed){
+                    player.previousWeapon();
+                    qPressed = true;
+                }
                 break;
             case KeyEvent.VK_E:
-                player.nextWeapon();
-                break;
-            case KeyEvent.VK_M:
-                player.takeDamage(10); // Simulates Damage
+                if(!ePressed){
+                    player.previousWeapon();
+                    ePressed = true;
+                }
                 break;
             case KeyEvent.VK_R:
                 player.getCurrentWeapon().reload();
@@ -589,7 +600,17 @@ public class Main extends GameEngine
     {
         if (currentState == GameState.PLAYING)
         {
-            updateDirection(e, false);
+            switch (e.getKeyCode()){
+                case KeyEvent.VK_Q:
+                    qPressed = false;
+                    break;
+                case KeyEvent.VK_E:
+                    ePressed = false;
+                    break;
+                default:
+                    updateDirection(e, false);
+                    break;
+            }
         }
     }
 
@@ -684,7 +705,37 @@ public class Main extends GameEngine
                 if(currentWeapon.getFireSound() != null){
                     playAudio(currentWeapon.getFireSound());
                 }
-                // Actual shooting logic coming soon ...
+
+                //Shooting logic
+                int centralRayIndex = 512; //with numRays being 1024
+                double wallDistance = raycaster.getRayDistances(centralRayIndex);
+                double angleTolerance  = Math.toRadians(1); //aiming tolerance = 1 degree
+                Enemy hitEnemy = null;
+                double minDistance = Double.MAX_VALUE;
+                double playerAngle = player.getAngle();
+                for (Enemy enemy : enemies) {
+                    double dx = enemy.getX() - player.getX();
+                    double dy = enemy.getY() - player.getY();
+                    double enemyAngle = Math.atan2(dy, dx);
+                    double angleDiff = normalizeAngle(enemyAngle - playerAngle);
+                    if (Math.abs(angleDiff) < angleTolerance) {
+                        double distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < minDistance && distance < wallDistance) {
+                            minDistance = distance;
+                            hitEnemy = enemy;
+                        }
+                    }
+                }
+
+                if (hitEnemy != null){
+                    int damage = currentWeapon.getDamage();
+                    hitEnemy.takeDamage(damage);
+                    if(!hitEnemy.isAlive()) {
+                        playAudio(soundZombieDeath);
+                        enemies.remove(hitEnemy);
+                    }
+                }
+
             }
         }
     }
@@ -711,5 +762,15 @@ public class Main extends GameEngine
         right = false;
         up = false;
         down = false;
+    }
+
+    public AudioClip getSoundPlayerInjured() {
+        return soundPlayerInjured;
+    }
+
+    private double normalizeAngle(double angle) {
+        while (angle < -Math.PI) angle += 2 * Math.PI;
+        while (angle > Math.PI) angle -= 2 * Math.PI;
+        return angle;
     }
 }

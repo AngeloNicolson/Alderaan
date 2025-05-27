@@ -9,6 +9,7 @@ public class GameAsset {
     private Image lazerPistol;
     private Image lazerRifle;
     private Image lazerShotgun;
+    private Image healthItemSprite;
 
 
     //constructor
@@ -24,6 +25,7 @@ public class GameAsset {
         lazerPistol = GameEngine.loadImage("assets/visual/LazerPistol.png");
         lazerRifle = GameEngine.loadImage("assets/visual/LazerRifle.png");
         lazerShotgun = GameEngine.loadImage("assets/visual/LazerShotGun.png");
+        healthItemSprite = GameEngine.loadImage("assets/visual/wine.png");
     }
 
     //get one strip of the wall texture based on the width value
@@ -44,6 +46,7 @@ public class GameAsset {
     public Image getLazerPistol(){return lazerPistol;}
     public Image getLazerRifle(){return lazerRifle;}
     public Image getLazerShotgun(){return lazerShotgun;}
+    public Image getHealthItemSprite() {return healthItemSprite;}
 
     
 }

@@ -28,6 +28,8 @@ public class Main extends GameEngine
     private List<WeaponItem> weaponItems = new ArrayList<>();
     private GameAsset gameAsset;
     private GameState currentState;
+    private boolean isAtEndTile;
+    private int currentLevel;
     // Window size
     private int width = 1024;
     private int height = 512;
@@ -162,17 +164,16 @@ public class Main extends GameEngine
             currentState = GameState.MAIN_MENU;
         });
 
-
+        //hide the mouse
         BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImg, new Point(0, 0), "blank cursor");
         defaultCursor = Cursor.getDefaultCursor();
+
+        //initialise the game map
         gameMap = new GameMap();
-        // Load map from file
-        if (!gameMap.loadFromFile("maps/map_1.txt"))
-        {
-            System.err.println("Error loading map.txt, exiting.");
-            System.exit(1);
-        }
+        currentLevel = 0; //start at 0, and will auto increment to level 1
+        advanceLevel(); //sets up map
+        
 
         setWindowSize(width, height);
 
@@ -219,6 +220,7 @@ public class Main extends GameEngine
 
         // Initialize ray caster and associated objects
         gameAsset = new GameAsset();
+        raycaster = new RayCaster(gameMap, TILE_SIZE, gameAsset);
         lazerRifleSprite = gameAsset.getLazerRifle();
         lazerShotgunSprite = gameAsset.getLazerShotgun();
         lazerRiflePickup = gameAsset.getLazerRiflePickup();
@@ -263,9 +265,8 @@ public class Main extends GameEngine
 
         //Initialize Player
         initializePlayer(initialWeapons);
+        isAtEndTile = false;
 
-
-        raycaster = new RayCaster(gameMap, TILE_SIZE, gameAsset);
 
         // Initialize Robot for mouse control
         try
@@ -328,7 +329,10 @@ public class Main extends GameEngine
 
             //Check Standing on End Tile
             if (gameMap.isEndTile((int) player.getX()/TILE_SIZE, (int) player.getY()/TILE_SIZE)) {
+                isAtEndTile = true;
                 System.out.println("Standing on end tile");
+            } else {
+                isAtEndTile =false;
             }
 
         }
@@ -588,6 +592,13 @@ public class Main extends GameEngine
             case KeyEvent.VK_R:
                 player.getCurrentWeapon().reload();
                 break;
+            case KeyEvent.VK_F:
+                if (isAtEndTile) {
+                advanceLevel();
+                isAtEndTile = false;
+                resetPlayer();
+                }
+                break;
             default:
                 updateDirection(e, true);
                 break;
@@ -760,6 +771,23 @@ public class Main extends GameEngine
         }
     }
 
+    private void resetPlayer() {
+        outer:
+        for (int y = 0; y < GameMap.HEIGHT; y++) {
+            for (int x = 0; x < GameMap.WIDTH; x++) {
+                if (gameMap.isWalkableTile(x, y)) {
+                    double px = x * TILE_SIZE + TILE_SIZE / 2.0;
+                    double py = y * TILE_SIZE + TILE_SIZE / 2.0;
+                    player.setX(px);
+                    player.setY(py);
+                    player.setAngle(0.0);
+                    player.setVerticalLookOffset(0.0);
+                    break outer;
+                }
+            }
+        }
+    }
+
     private void restartGame()
     {
         initializePlayer(initialWeapons);
@@ -778,5 +806,36 @@ public class Main extends GameEngine
         while (angle < -Math.PI) angle += 2 * Math.PI;
         while (angle > Math.PI) angle -= 2 * Math.PI;
         return angle;
+    }
+
+    private void advanceLevel(){
+        String mapFileName = "maps/Level01.txt";
+
+        currentLevel++; //advance to the next level
+
+        switch (currentLevel) {
+            case 1:
+                mapFileName = "maps/Level01.txt";
+                break;
+            case 2:
+                mapFileName = "maps/Level02.txt";
+                break;
+            case 3:
+                mapFileName = "maps/Level03.txt";
+                break; 
+            case 4:
+                System.out.println("WIN WIN WIN");
+                break;   
+            default:
+                mapFileName = "maps/Level01.txt";
+        }
+
+        // Load map from file name
+        if (!gameMap.loadFromFile(mapFileName))
+        {
+            System.err.println("Error loading map.txt, exiting.");
+            System.exit(1);
+        }
+
     }
 }

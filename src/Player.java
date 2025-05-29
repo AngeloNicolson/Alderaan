@@ -75,6 +75,10 @@ public class Player extends Entity
         this.verticalLookOffset = Math.max(-150, Math.min(150, offset));
     }
 
+    public void setAngle(double angle) {
+        this.angle = angle;
+    }
+
     @Override public void update(GameEngine engine, double dt)
     {
         double moveStep = speed * dt;

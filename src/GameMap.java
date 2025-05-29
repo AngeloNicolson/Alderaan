@@ -147,4 +147,9 @@ public class GameMap
         return 1; //default to one
         
     }
+
+    public boolean isEndTile(int x, int y)
+    {
+        return grid[y][x] == 9;
+    }
 }

@@ -325,6 +325,12 @@ public class Main extends GameEngine
             {
                 currentState = GameState.GAME_OVER;
             }
+
+            //Check Standing on End Tile
+            if (gameMap.isEndTile((int) player.getX()/TILE_SIZE, (int) player.getY()/TILE_SIZE)) {
+                System.out.println("Standing on end tile");
+            }
+
         }
     }
 

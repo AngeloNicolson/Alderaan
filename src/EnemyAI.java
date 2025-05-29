@@ -4,7 +4,9 @@ public class EnemyAI
     {
         IDLE,    // ORDINAL 0 - Not aware of the player
         ALERTED, // ORDINAL 1 - Possibly heard the player or sensed presence
-        CHASING  // ORDINAL 2 - Has seen the player and is pursuing
+        CHASING,  // ORDINAL 2 - Has seen the player and is pursuing
+        ATTACKING, // ORDINAL 3 - In attacking range
+        DEAD // ORDINAL 4
     }
 
     private AIState state = AIState.IDLE; // Initial state
@@ -73,6 +75,8 @@ public class EnemyAI
             if (dist > stopDistance)
             {
                 enemy.moveToward(targetX, targetY, dt);
+            }else {
+                state = AIState.ATTACKING;
             }
 
             enemy.smoothFacePlayer(player, Math.PI * 2, dt); // turn speed = 2 pi a second
@@ -82,12 +86,22 @@ public class EnemyAI
                 state = AIState.IDLE;
             }
             break;
-
+            case ATTACKING:
+                if (dist > stopDistance) {
+                    state = AIState.CHASING;
+                }
+                enemy.smoothFacePlayer(player, Math.PI * 2, dt);
+                break;
+            case DEAD:
+                break;
         default:
             state = AIState.IDLE;
             targetX = enemy.getX();
             targetY = enemy.getY();
             break;
+        }
+        if (!enemy.isAlive()) {
+            state = AIState.DEAD;
         }
     }
 

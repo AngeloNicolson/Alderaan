@@ -15,7 +15,7 @@ public class Enemy extends Entity
     private Image[][] animations; // [state][frame]
 
     private int frameWidth, frameHeight;
-    private int[] framesPerState = {5, 1, 6}; // IDLE=5, ALERTED=1, CHASING=6 frames
+    private int[] framesPerState = {5, 1, 6, 3, 5}; // IDLE=5, ALERTED=1, CHASING=6, ATTACKING=3, DEAD=5 frames
     private double frameTimer = 0;
     private double frameDuration = 0.2;
     private int currentFrame = 0;
@@ -36,6 +36,8 @@ public class Enemy extends Entity
     //Attack
     private double attackCooldown = 2.0;
     private double cooldownTimer = 0;
+    private double deathTimer;
+    private double hangAroundTime = 5;
 
     //Health
     private int maxHealth = 100;
@@ -49,13 +51,13 @@ public class Enemy extends Entity
         this.mapS = mapS;
 
         this.ai = new EnemyAI(map, mapS);
-        this.spriteSheet = GameEngine.loadImage("assets/visual/pixil-frame-death.png");
+        this.spriteSheet = GameEngine.loadImage("assets/visual/StormZombieSpritesheet.png");
 
         // Updated frame size for new spritesheet dimensions: 683 x 1024 (TODO: Change back once we get final
         // spritesheets)
-        this.frameWidth = 113;       // 683 / 6 columns (approximate)
-        this.frameHeight = 1024 / 9; // Updated: 9 rows instead of 8
-        animations = new Image[3][]; // IDLE, ALERTED, CHASING
+        this.frameWidth = 432 / 6;       // 683 / 6 columns (approximate)
+        this.frameHeight = 576 / 8; // Updated: 9 rows instead of 8
+        animations = new Image[5][]; // IDLE, ALERTED, CHASING, ATTACKING, DEAD
 
         // IDLE row 7 has 5 columns (directions)
         animations[0] = new Image[5];
@@ -79,6 +81,14 @@ public class Enemy extends Entity
                     GameEngine.subImage(spriteSheet, frame * frameWidth, dir * frameHeight, frameWidth, frameHeight);
             }
         }
+        animations[3] = new Image[3];
+        for (int att = 0; att < 3; att++) {
+            animations[3][att] = GameEngine.subImage(spriteSheet, att * frameWidth, 7 * frameHeight, frameWidth, frameHeight);
+        }
+        animations[4] = new Image[5];
+        for (int dead = 0; dead < 5; dead ++) {
+            animations[4][dead] = GameEngine.subImage(spriteSheet, dead * frameWidth, 5 * frameHeight, frameWidth, frameHeight);
+        }
     }
 
     @Override public void update(GameEngine engine, double dt, Player player)
@@ -91,26 +101,12 @@ public class Enemy extends Entity
         EnemyAI.AIState oldState = ai.getState();
         ai.update(this, player, dt);
         EnemyAI.AIState newState = ai.getState();
-
-
-        //Apply melee damage
-        if(!isWalkingBack && ai.getState() == EnemyAI.AIState.CHASING){
-            double dx = player.getX() - x;
-            double dy = player.getY() - y;
-            double dist = Math.sqrt(dx * dx + dy * dy);
-            double stopDistance = 30;
-
-            if (dist <= stopDistance && cooldownTimer <= 0) {
-                player.takeDamage(10); // Deal 10 damage
-
-                // Play the injured sound
-                Main main = (Main) engine;
-                engine.playAudio(main.getSoundPlayerInjured());
-
-                cooldownTimer = attackCooldown; //reset cooldown
-            }
+        if (oldState != EnemyAI.AIState.DEAD && newState == EnemyAI.AIState.DEAD) {
+            deathTimer = 0;
+            currentFrame = 0;
+        }else if (oldState == EnemyAI.AIState.DEAD && newState == EnemyAI.AIState.DEAD) {
+            deathTimer += dt;
         }
-
 
         // Detect flick from CHASING to ALERTED: trigger walkback
         if (oldState == EnemyAI.AIState.CHASING && newState == EnemyAI.AIState.ALERTED)
@@ -168,6 +164,26 @@ public class Enemy extends Entity
         else
         {
             currentFrame = 0;
+        }
+        //Apply melee damage
+        if(newState == EnemyAI.AIState.ATTACKING){
+            double dx = player.getX() - x;
+            double dy = player.getY() - y;
+            double dist = Math.sqrt(dx * dx + dy * dy);
+            double stopDistance = 30;
+
+            if (dist <= stopDistance && cooldownTimer <= 0) {
+                player.takeDamage(10); // Deal 10 damage
+                currentFrame = 1;
+                // Play the injured sound
+                Main main = (Main) engine;
+                engine.playAudio(main.getSoundPlayerInjured());
+
+                cooldownTimer = attackCooldown; //reset cooldown
+            }
+        }
+        if (newState == EnemyAI.AIState.DEAD && deathTimer > frameDuration * 4) {
+            currentFrame = 4;
         }
     }
 
@@ -231,6 +247,14 @@ public class Enemy extends Entity
 
             int col = currentFrame % 6;
             fullFrame = animations[2][drawDir * 6 + col];
+        }else if (stateIndex == EnemyAI.AIState.ATTACKING.ordinal()) {
+            if ( attackCooldown - cooldownTimer < frameDuration * 2) {
+                fullFrame = animations[3][currentFrame];
+            }else {
+                fullFrame = animations[0][0];
+            }
+        }else if (stateIndex == EnemyAI.AIState.DEAD.ordinal()) {
+            fullFrame = animations[4][currentFrame];
         }
         else if (isWalkingBack)
         {
@@ -327,7 +351,9 @@ public class Enemy extends Entity
         double dy = player.getY() - this.y;
         this.angle = Math.atan2(dy, dx);
     }
-
+    public boolean toRemove() {
+        return (deathTimer > hangAroundTime);
+    }
     public void smoothFacePlayer(Player player, double maxTurnRate, double dt)
     {
         double dx = player.getX() - this.x;

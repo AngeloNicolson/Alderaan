@@ -292,10 +292,15 @@ public class Main extends GameEngine
             player.setDirection(left, right, up, down);
             player.update(this, dt);
             player.getCurrentWeapon().update(dt);
+            Enemy toRemove = null;
             for (Enemy enemy : enemies)
             {
                 enemy.update(this, dt, player);
+                if (enemy.toRemove()) {
+                    toRemove = enemy;
+                }
             }
+            enemies.remove(toRemove);
 
             //Check health item pickup
             for(HealthItem healthItem : healthItems){
@@ -749,7 +754,6 @@ public class Main extends GameEngine
                     hitEnemy.takeDamage(damage);
                     if(!hitEnemy.isAlive()) {
                         playAudio(soundZombieDeath);
-                        enemies.remove(hitEnemy);
                     }
                 }
 

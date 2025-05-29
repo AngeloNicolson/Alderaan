@@ -153,10 +153,12 @@ public class Player extends Entity
         int tileX = (int)(px / mapS);
         int tileY = (int)(py / mapS);
 
-        if (tileX < 0 || tileY < 0 || tileX >= map.getWidth() || tileY >= map.getHeight())
-            return true;
+        return map.isWall(tileX, tileY);
 
-        return map.getGrid()[tileY][tileX] >= 1;
+        // if (tileX < 0 || tileY < 0 || tileX >= map.getWidth() || tileY >= map.getHeight())
+        //     return true;
+
+        // return map.getGrid()[tileY][tileX] >= 1 && map.getGrid()[tileY][tileX] < 9;
     }
 
 

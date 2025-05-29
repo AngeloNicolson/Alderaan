@@ -29,50 +29,40 @@ public class GameMap
                 for (int x = 0; x < WIDTH; x++)
                 {
                     char c = line.charAt(x);
-                    if (c == '1')
-                    {
-                        grid[y][x] = 1;
-                    }
-                    else if (c == '2')
-                    {
-                        grid[y][x] = 2;
-                    }
-                    else if (c == '3')
-                    {
-                        grid[y][x] = 3;
-                    }
-                    else if (c == '4')
-                    {
-                        grid[y][x] = 4;
-                    }
-                    else if (c == '5')
-                    {
-                        grid[y][x] = 5;
-                    }
-                    else if (c == '6')
-                    {
-                        grid[y][x] = 6;
-                    }
-                    else if (c == '7')
-                    {
-                        grid[y][x] = 7;
-                    }
-                    else if (c == '8')
-                    {
-                        grid[y][x] = 8;
-                    }
-                    else if (c == '9')
-                    {
-                        grid[y][x] = 9;
-                    }
-                    else if (c == '0')
-                    {
-                        grid[y][x] = 0;
-                    }
-                    else
-                    {
-                        System.err.println("Invalid character '" + c + "' at " + y + "," + x);
-                        return false;
+                    switch (c) {
+                        case '1':
+                            grid[y][x] = 1;
+                            break;
+                        case '2':
+                            grid[y][x] = 2;
+                            break;
+                        case '3':
+                            grid[y][x] = 3;
+                            break;
+                        case '4':
+                            grid[y][x] = 4;
+                            break;
+                        case '5':
+                            grid[y][x] = 5;
+                            break;
+                        case '6':
+                            grid[y][x] = 6;
+                            break;
+                        case '7':
+                            grid[y][x] = 7;
+                            break;
+                        case '8':
+                            grid[y][x] = 8;
+                            break;
+                        case '9':
+                            grid[y][x] = 9; //the end zone tile
+                            break;
+                        case '0':
+                            grid[y][x] = 0; //the walkable tile
+                            break;
+                        default:
+                            System.err.println("Invalid character '" + c + "' at " + y + "," + x);
+                            return false;
                     }
                 }
             }
@@ -104,7 +94,7 @@ public class GameMap
     {
         if (tileX < 0 || tileY < 0 || tileX >= WIDTH || tileY >= HEIGHT)
             return false;
-        return grid[tileY][tileX] == 0;
+        return grid[tileY][tileX] == 0 || grid[tileY][tileX] == 9;
     }
 
     public void draw(GameEngine engine, int miniTileSize, int offsetX, int offsetY, double playerX, double playerY,
@@ -143,7 +133,7 @@ public class GameMap
     {
         if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT)
             return true;
-        return grid[y][x] >= 1;
+        return grid[y][x] >= 1 && grid[y][x] < 9;
     }
 
     public int getWallType(int x, int y)

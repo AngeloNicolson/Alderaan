@@ -74,9 +74,9 @@ public class Enemy extends Entity
         for (int col = 0; col < 5; col++)
         {
             animations[0][col] =
-                GameEngine.subImage(spriteSheet, col * frameWidth, 7 * frameHeight, frameWidth, frameHeight);
+                GameEngine.subImage(spriteSheet, col * frameWidth, 6 * frameHeight, frameWidth, frameHeight);
             hitAnimations[0][col] =
-                    GameEngine.subImage(hitSheet, col * frameWidth, 7 * frameHeight, frameWidth, frameHeight);
+                    GameEngine.subImage(hitSheet, col * frameWidth, 6 * frameHeight, frameWidth, frameHeight);
         }
 
         // ALERTED uses a single static frame (row 0 col 0)
@@ -282,8 +282,8 @@ public class Enemy extends Entity
                 fullFrame = animations[3][currentFrame];
                 hitFrame = hitAnimations[3][currentFrame];
             }else {
-                fullFrame = animations[0][0];
-                hitFrame = hitAnimations[0][0];
+                fullFrame = animations[3][0];
+                hitFrame = hitAnimations[3][0];
             }
         }else if (stateIndex == EnemyAI.AIState.DEAD.ordinal()) {
             fullFrame = animations[4][currentFrame];

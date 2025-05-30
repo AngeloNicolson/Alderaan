@@ -752,6 +752,7 @@ public class Main extends GameEngine
                 if (hitEnemy != null){
                     int damage = currentWeapon.getDamage();
                     hitEnemy.takeDamage(damage);
+                    playAudio(soundLazerHit);
                     if(!hitEnemy.isAlive()) {
                         playAudio(soundZombieDeath);
                     }

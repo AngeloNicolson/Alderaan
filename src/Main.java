@@ -23,6 +23,12 @@ enum Difficulty {
     HARD
 }
 
+enum GraphicsQuality {
+    LOW,
+    MEDIUM,
+    HIGH
+}
+
 
 public class Main extends GameEngine
 {
@@ -38,6 +44,7 @@ public class Main extends GameEngine
     private boolean isAtEndTile;
     private int currentLevel;
     private Difficulty difficulty = Difficulty.NORMAL;
+    private GraphicsQuality quality =  GraphicsQuality.MEDIUM;
     // Window size
     private int width = 1024;
     private int height = 512;
@@ -82,7 +89,7 @@ public class Main extends GameEngine
     private Image gameOverBackground;
     private Button backButton;
     private List<Button> settingsButtons = new ArrayList<>();
-    private Button easyButton, normalButton, hardButton;
+    private Button easyButton, normalButton, hardButton, highButton, mediumButton, lowButton;
 
 
     private class Button{
@@ -175,24 +182,44 @@ public class Main extends GameEngine
             currentState = GameState.CREDITS;
         }));
 
-        easyButton = new Button(startX, startY, buttonWidth, buttonHeight, "Easy", () -> {
+        easyButton = new Button(startX / 2, startY, buttonWidth, buttonHeight, "Easy", () -> {
             difficulty = Difficulty.EASY;
             updateDifficultyButtons();
         });
-        normalButton = new Button(startX, startY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight, "Normal", () -> {
+        normalButton = new Button(startX / 2, startY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight, "Normal", () -> {
             difficulty = Difficulty.NORMAL;
             updateDifficultyButtons();
         });
-        hardButton = new Button(startX, startY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "Hard", () -> {
+        hardButton = new Button(startX / 2, startY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "Hard", () -> {
             difficulty = Difficulty.HARD;
             updateDifficultyButtons();
         });
+        highButton = new Button((startX /2) * 3, startY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "High" , () -> {
+            quality = GraphicsQuality.HIGH;
+            updateGraphicsQuality();
+            raycaster.setNumRays(1024);
+        });
+        mediumButton = new Button((startX /2) * 3, startY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "Medium" , () -> {
+            quality = GraphicsQuality.MEDIUM;
+            updateGraphicsQuality();
+            raycaster.setNumRays(512);
+
+        });
+        lowButton = new Button((startX /2) * 3, startY, buttonWidth, buttonHeight, "Low" , () -> {
+            quality = GraphicsQuality.LOW;
+            updateGraphicsQuality();
+            raycaster.setNumRays(256);
+        });
+
 
         settingsButtons.add(easyButton);
         settingsButtons.add(normalButton);
         settingsButtons.add(hardButton);
-
+        settingsButtons.add(lowButton);
+        settingsButtons.add(mediumButton);
+        settingsButtons.add(highButton);
         updateDifficultyButtons();
+        updateGraphicsQuality();
 
 
 
@@ -260,7 +287,6 @@ public class Main extends GameEngine
 
     @Override public void update(double dt)
     {
-
         // Update Enemies
         if (currentState == GameState.PLAYING)
         {
@@ -565,7 +591,9 @@ public class Main extends GameEngine
         drawCenteredText(60, "Settings", "Arial", 40, Font.BOLD);
         // Draw difficulty label
         changeColor(white);
-        drawCenteredText(120, "Difficulty:", "Arial", 24, Font.PLAIN);
+        drawText(this.mWidth / 4.0 , 120.0,  "Difficulty:", "Arial", 24);
+        drawText((this.mWidth / 4.0) * 3 - 140 , 120.0,  "Graphics Quality:", "Arial", 24);
+
         // Draw setings buttons
         for (Button button : settingsButtons) {
             button.draw();
@@ -579,6 +607,11 @@ public class Main extends GameEngine
         easyButton.selected = (difficulty == Difficulty.EASY);
         normalButton.selected = (difficulty == Difficulty.NORMAL);
         hardButton.selected = (difficulty == Difficulty.HARD);
+    }
+    private void updateGraphicsQuality  () {
+        highButton.selected = (quality == GraphicsQuality.HIGH);
+        mediumButton.selected = (quality == GraphicsQuality.MEDIUM);
+        lowButton.selected = (quality == GraphicsQuality.LOW);
     }
 
     @Override public void keyPressed(KeyEvent e)
@@ -749,7 +782,7 @@ public class Main extends GameEngine
                 }
 
                 //Shooting logic
-                int centralRayIndex = 512; //with numRays being 1024
+                int centralRayIndex = raycaster.getNumRays() / 2; //with numRays being 1024
                 double wallDistance = raycaster.getRayDistances(centralRayIndex);
                 double angleTolerance  = Math.toRadians(1); //aiming tolerance = 1 degree
                 Enemy hitEnemy = null;

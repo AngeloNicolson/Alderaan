@@ -284,4 +284,7 @@ public class RayCaster
     {
         this.fov = fov;
     }
+    public int getNumRays() {
+        return numRays;
+    }
 }

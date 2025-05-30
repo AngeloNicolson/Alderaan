@@ -29,40 +29,41 @@ public class GameMap
                 for (int x = 0; x < WIDTH; x++)
                 {
                     char c = line.charAt(x);
-                    switch (c) {
-                        case '1':
-                            grid[y][x] = 1;
-                            break;
-                        case '2':
-                            grid[y][x] = 2;
-                            break;
-                        case '3':
-                            grid[y][x] = 3;
-                            break;
-                        case '4':
-                            grid[y][x] = 4;
-                            break;
-                        case '5':
-                            grid[y][x] = 5;
-                            break;
-                        case '6':
-                            grid[y][x] = 6;
-                            break;
-                        case '7':
-                            grid[y][x] = 7;
-                            break;
-                        case '8':
-                            grid[y][x] = 8;
-                            break;
-                        case '9':
-                            grid[y][x] = 9; //the end zone tile
-                            break;
-                        case '0':
-                            grid[y][x] = 0; //the walkable tile
-                            break;
-                        default:
-                            System.err.println("Invalid character '" + c + "' at " + y + "," + x);
-                            return false;
+                    switch (c)
+                    {
+                    case '1':
+                        grid[y][x] = 1;
+                        break;
+                    case '2':
+                        grid[y][x] = 2;
+                        break;
+                    case '3':
+                        grid[y][x] = 3;
+                        break;
+                    case '4':
+                        grid[y][x] = 4;
+                        break;
+                    case '5':
+                        grid[y][x] = 5;
+                        break;
+                    case '6':
+                        grid[y][x] = 6;
+                        break;
+                    case '7':
+                        grid[y][x] = 7;
+                        break;
+                    case '8':
+                        grid[y][x] = 8;
+                        break;
+                    case '9':
+                        grid[y][x] = 9; // the end zone tile
+                        break;
+                    case '0':
+                        grid[y][x] = 0; // the walkable tile
+                        break;
+                    default:
+                        System.err.println("Invalid character '" + c + "' at " + y + "," + x);
+                        return false;
                     }
                 }
             }
@@ -138,14 +139,15 @@ public class GameMap
 
     public int getWallType(int x, int y)
     {
-        if (isWall(x, y)) {
-            if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT){
-                return 1; //default points outside the map to be wall one
+        if (isWall(x, y))
+        {
+            if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT)
+            {
+                return 1; // default points outside the map to be wall one
             }
             return grid[y][x];
         }
-        return 1; //default to one
-        
+        return 1; // default to one
     }
 
     public boolean isEndTile(int x, int y)

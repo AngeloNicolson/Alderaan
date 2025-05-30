@@ -17,17 +17,18 @@ enum GameState
     GAME_OVER,
 }
 
-enum Difficulty {
+enum Difficulty
+{
     EASY,
     NORMAL,
     HARD
 }
 
-enum GraphicsQuality {
+enum GraphicsQuality
+{
     LOW,
     HIGH
 }
-
 
 public class Main extends GameEngine
 {
@@ -43,7 +44,7 @@ public class Main extends GameEngine
     private boolean isAtEndTile;
     private int currentLevel;
     private Difficulty difficulty = Difficulty.NORMAL;
-    private GraphicsQuality quality =  GraphicsQuality.LOW;
+    private GraphicsQuality quality = GraphicsQuality.LOW;
     // Window size
     private int width = 1024;
     private int height = 512;
@@ -57,7 +58,7 @@ public class Main extends GameEngine
     private Robot robot;
     private boolean warpingMouse = false;
 
-    //Key handling
+    // Key handling
     private boolean qPressed = false;
     private boolean ePressed = false;
 
@@ -90,14 +91,15 @@ public class Main extends GameEngine
     private List<Button> settingsButtons = new ArrayList<>();
     private Button easyButton, normalButton, hardButton, highButton, lowButton;
 
-
-    private class Button{
+    private class Button
+    {
         int x, y, width, height;
         String text;
         Runnable action;
         boolean selected;
 
-        Button(int x, int y, int width, int height, String text, Runnable action){
+        Button(int x, int y, int width, int height, String text, Runnable action)
+        {
             this.x = x;
             this.y = y;
             this.width = width;
@@ -105,18 +107,21 @@ public class Main extends GameEngine
             this.text = text;
             this.action = action;
             this.selected = false;
-
         }
 
-        boolean contains(int mx, int my){
+        boolean contains(int mx, int my)
+        {
             return mx >= x && mx <= x + width && my >= y && my <= y + height;
         }
 
         void draw()
         {
-            if (selected){
+            if (selected)
+            {
                 changeColor(new Color(60, 60, 60, 200));
-            } else{
+            }
+            else
+            {
                 changeColor(new Color(30, 30, 30, 150));
             }
             drawSolidRectangle(x, y, width, height);
@@ -131,10 +136,12 @@ public class Main extends GameEngine
         }
     }
 
-    private static class RenderableObject {
+    private static class RenderableObject
+    {
         Object obj;
         double distance;
-        RenderableObject(Object obj, double distance) {
+        RenderableObject(Object obj, double distance)
+        {
             this.obj = obj;
             this.distance = distance;
         }
@@ -165,45 +172,42 @@ public class Main extends GameEngine
         int buttonHeight = 50;
         int buttonSpacing = 20;
         int startX = (width - buttonWidth) / 2;
-        int startY = (height - ( buttonHeight + 3 * buttonSpacing)) / 2;
+        int startY = (height - (buttonHeight + 3 * buttonSpacing)) / 2;
 
-        menuButtons.add(new Button(startX, startY, buttonWidth, buttonHeight, "Start Game", () -> {
-            startNewGame();
-        }));
+        menuButtons.add(new Button(startX, startY, buttonWidth, buttonHeight, "Start Game", () -> { startNewGame(); }));
 
-        menuButtons.add(new Button(startX, startY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight, "How to Play", () -> {
-            currentState = GameState.HOW_TO_PLAY;
-        }));
-        menuButtons.add(new Button(startX, startY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "Settings", () -> {
-            currentState = GameState.SETTINGS;
-        }));
-        menuButtons.add(new Button(startX, startY + 3 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "Credits", () -> {
-            currentState = GameState.CREDITS;
-        }));
+        menuButtons.add(new Button(startX, startY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight,
+                                   "How to Play", () -> { currentState = GameState.HOW_TO_PLAY; }));
+        menuButtons.add(new Button(startX, startY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight,
+                                   "Settings", () -> { currentState = GameState.SETTINGS; }));
+        menuButtons.add(new Button(startX, startY + 3 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight,
+                                   "Credits", () -> { currentState = GameState.CREDITS; }));
 
         easyButton = new Button(startX / 2, startY, buttonWidth, buttonHeight, "Easy", () -> {
             difficulty = Difficulty.EASY;
             updateDifficultyButtons();
         });
-        normalButton = new Button(startX / 2, startY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight, "Normal", () -> {
-            difficulty = Difficulty.NORMAL;
-            updateDifficultyButtons();
-        });
-        hardButton = new Button(startX / 2, startY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "Hard", () -> {
-            difficulty = Difficulty.HARD;
-            updateDifficultyButtons();
-        });
-        highButton = new Button((startX /2) * 3, startY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "High" , () -> {
-            quality = GraphicsQuality.HIGH;
-            updateGraphicsQuality();
-            raycaster.setNumRays(1048);
-        });
-        lowButton = new Button((startX /2) * 3, startY, buttonWidth, buttonHeight, "Low" , () -> {
+        normalButton =
+            new Button(startX / 2, startY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight, "Normal", () -> {
+                difficulty = Difficulty.NORMAL;
+                updateDifficultyButtons();
+            });
+        hardButton = new Button(startX / 2, startY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight,
+                                "Hard", () -> {
+                                    difficulty = Difficulty.HARD;
+                                    updateDifficultyButtons();
+                                });
+        highButton = new Button((startX / 2) * 3, startY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight,
+                                "High", () -> {
+                                    quality = GraphicsQuality.HIGH;
+                                    updateGraphicsQuality();
+                                    raycaster.setNumRays(1048);
+                                });
+        lowButton = new Button((startX / 2) * 3, startY, buttonWidth, buttonHeight, "Low", () -> {
             quality = GraphicsQuality.LOW;
             updateGraphicsQuality();
             raycaster.setNumRays(512);
         });
-
 
         settingsButtons.add(easyButton);
         settingsButtons.add(normalButton);
@@ -213,27 +217,21 @@ public class Main extends GameEngine
         updateDifficultyButtons();
         updateGraphicsQuality();
 
-
-
-
         int backButtonWidth = 100;
         int backButtonHeight = 40;
         int backButtonX = (width - backButtonWidth) / 2;
         int backButtonY = height - 100;
-        backButton = new Button(backButtonX, backButtonY, backButtonWidth, backButtonHeight, "Back", () -> {
-            currentState = GameState.MAIN_MENU;
-        });
+        backButton = new Button(backButtonX, backButtonY, backButtonWidth, backButtonHeight, "Back",
+                                () -> { currentState = GameState.MAIN_MENU; });
 
-        //hide the mouse
+        // hide the mouse
         BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImg, new Point(0, 0), "blank cursor");
         defaultCursor = Cursor.getDefaultCursor();
 
-        //initialise the game map
+        // initialise the game map
         gameMap = new GameMap();
-        currentLevel = 0; //start at 0, and will auto increment to level 1
-
-        
+        currentLevel = 0; // start at 0, and will auto increment to level 1
 
         setWindowSize(width, height);
 
@@ -249,7 +247,7 @@ public class Main extends GameEngine
         soundZombieNeutral = loadAudio("assets/audio/SoundZombieNeutral.wav");
         soundPickupItem = loadAudio("assets/audio/SoundPickupItem.wav");
         soundReloadRifle = loadAudio("assets/audio/SoundReloadRifle.wav");
-        soundReloadShotgun = loadAudio("assets/audio/SoundReloadShotgun.wav\"");
+        soundReloadShotgun = loadAudio("assets/audio/SoundReloadShotgun.wav");
 
         // Initialize ray caster and associated objects
         gameAsset = new GameAsset();
@@ -259,9 +257,8 @@ public class Main extends GameEngine
         lazerRiflePickup = gameAsset.getLazerRiflePickup();
         lazerShotgunPickup = gameAsset.getLazerShotgunPickup();
 
-        advanceLevel(); //sets up map
+        advanceLevel(); // sets up map
         isAtEndTile = false;
-
 
         // Initialize Robot for mouse control
         try
@@ -289,32 +286,39 @@ public class Main extends GameEngine
             for (Enemy enemy : enemies)
             {
                 enemy.update(this, dt, player);
-                if (enemy.toRemove()) {
+                if (enemy.toRemove())
+                {
                     toRemove = enemy;
                 }
             }
             enemies.remove(toRemove);
 
-            //Check health item pickup
-            for(HealthItem healthItem : healthItems){
-                if (!healthItem.isConsumed()) {
+            // Check health item pickup
+            for (HealthItem healthItem : healthItems)
+            {
+                if (!healthItem.isConsumed())
+                {
                     double dx = player.getX() - healthItem.getX();
                     double dy = player.getY() - healthItem.getY();
                     double distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance < TILE_SIZE / 2) { // the pickup range
+                    if (distance < TILE_SIZE / 2)
+                    { // the pickup range
                         healthItem.consume(player);
                         playAudio(soundPickupItem);
                     }
                 }
             }
 
-            //Check Weapon pickup
-            for (WeaponItem weaponItem : weaponItems) {
-                if (!weaponItem.isConsumed()) {
+            // Check Weapon pickup
+            for (WeaponItem weaponItem : weaponItems)
+            {
+                if (!weaponItem.isConsumed())
+                {
                     double dx = player.getX() - weaponItem.getX();
                     double dy = player.getY() - weaponItem.getY();
                     double distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance < TILE_SIZE / 2) {
+                    if (distance < TILE_SIZE / 2)
+                    {
                         weaponItem.consume(player);
                         playAudio(soundPickupItem);
                     }
@@ -325,38 +329,45 @@ public class Main extends GameEngine
                 currentState = GameState.GAME_OVER;
             }
 
-            //Check Standing on End Tile
-            if (gameMap.isEndTile((int) player.getX()/TILE_SIZE, (int) player.getY()/TILE_SIZE)) {
+            // Check Standing on End Tile
+            if (gameMap.isEndTile((int)player.getX() / TILE_SIZE, (int)player.getY() / TILE_SIZE))
+            {
                 isAtEndTile = true;
-                //System.out.println("Standing on end tile");
-            } else {
+                // System.out.println("Standing on end tile");
+            }
+            else
+            {
                 isAtEndTile = false;
             }
-
         }
     }
 
     @Override public void paintComponent()
     {
-        if(currentState == GameState.MAIN_MENU){
+        if (currentState == GameState.MAIN_MENU)
+        {
             getFrame().setCursor(defaultCursor);
             drawMainMenu();
         }
-        else if(currentState == GameState.HOW_TO_PLAY){
+        else if (currentState == GameState.HOW_TO_PLAY)
+        {
             getFrame().setCursor(defaultCursor);
             drawImage(menuBackground, 0, 0, width, height);
             drawHowToPlay();
         }
-        else if (currentState == GameState.SETTINGS) {
+        else if (currentState == GameState.SETTINGS)
+        {
             getFrame().setCursor(defaultCursor);
             drawSettings();
         }
-        else if(currentState == GameState.CREDITS){
+        else if (currentState == GameState.CREDITS)
+        {
             getFrame().setCursor(defaultCursor);
             drawImage(menuBackground, 0, 0, width, height);
             drawCredits();
         }
-        else if (currentState == GameState.PLAYING) {
+        else if (currentState == GameState.PLAYING)
+        {
             getFrame().setCursor(blankCursor);
             changeBackgroundColor(black);
             clearBackground(width(), height());
@@ -389,11 +400,13 @@ public class Main extends GameEngine
             int visionRadius = 5;
             gameMap.draw(this, miniTileSize, offsetX, offsetY, player.getX(), player.getY(), visionRadius, TILE_SIZE);
 
-            //Render our objects
+            // Render our objects
             List<RenderableObject> toRender = new ArrayList<>();
 
-            for (HealthItem healthItem : healthItems) {
-                if (!healthItem.isConsumed()) {
+            for (HealthItem healthItem : healthItems)
+            {
+                if (!healthItem.isConsumed())
+                {
                     double dx = healthItem.getX() - player.getX();
                     double dy = healthItem.getY() - player.getY();
                     double distance = Math.sqrt(dx * dx + dy * dy);
@@ -401,15 +414,18 @@ public class Main extends GameEngine
                 }
             }
 
-            for (Enemy enemy : enemies) {
+            for (Enemy enemy : enemies)
+            {
                 double dx = enemy.getX() - player.getX();
                 double dy = enemy.getY() - player.getY();
                 double distance = Math.sqrt(dx * dx + dy * dy);
                 toRender.add(new RenderableObject(enemy, distance));
             }
 
-            for (WeaponItem weaponItem : weaponItems) {
-                if (!weaponItem.isConsumed()) {
+            for (WeaponItem weaponItem : weaponItems)
+            {
+                if (!weaponItem.isConsumed())
+                {
                     double dx = weaponItem.getX() - player.getX();
                     double dy = weaponItem.getY() - player.getY();
                     double distance = Math.sqrt(dx * dx + dy * dy);
@@ -417,17 +433,23 @@ public class Main extends GameEngine
                 }
             }
 
-            //Sort by distance (we want farther objects spawning first)
-            toRender.sort((a,b) -> Double.compare(b.distance, a.distance));
+            // Sort by distance (we want farther objects spawning first)
+            toRender.sort((a, b) -> Double.compare(b.distance, a.distance));
 
-            //Render objects
-            for (RenderableObject ro : toRender) {
-                if (ro.obj instanceof HealthItem) {
-                    ((HealthItem) ro.obj).render(this, player, raycaster.getRayDistancesArray());
-                } else if (ro.obj instanceof Enemy) {
-                    ((Enemy) ro.obj).render(this, player, raycaster.getRayDistancesArray());
-                } else if (ro.obj instanceof WeaponItem) {
-                    ((WeaponItem) ro.obj).render(this, player, raycaster.getRayDistancesArray());
+            // Render objects
+            for (RenderableObject ro : toRender)
+            {
+                if (ro.obj instanceof HealthItem)
+                {
+                    ((HealthItem)ro.obj).render(this, player, raycaster.getRayDistancesArray());
+                }
+                else if (ro.obj instanceof Enemy)
+                {
+                    ((Enemy)ro.obj).render(this, player, raycaster.getRayDistancesArray());
+                }
+                else if (ro.obj instanceof WeaponItem)
+                {
+                    ((WeaponItem)ro.obj).render(this, player, raycaster.getRayDistancesArray());
                 }
             }
 
@@ -440,23 +462,28 @@ public class Main extends GameEngine
             changeColor(white);
             drawText(220, height() - 30, player.getHealth() + "/" + player.getMaxHealth(), "Arial", 20);
 
-            //Weapon Sprite
+            // Weapon Sprite
             Weapon currentWeapon = player.getCurrentWeapon();
-            if (currentWeapon.getSprite() != null) {
+            if (currentWeapon.getSprite() != null)
+            {
                 drawImage(currentWeapon.getSprite(), weaponX, weaponY, 400, 400);
             }
-            // Weapon name and ammo count on bottom right
+            // Weapon name and ammo count on bottom righ
             String weaponName = currentWeapon.getName();
             changeColor(green);
             drawText(width() - 120, height() - 70, weaponName, "Arial", 16);
-            if (currentWeapon.isUnlimitedAmmo()) {
+            if (currentWeapon.isUnlimitedAmmo())
+            {
                 drawText(width() - 100, height() - 10, "\u221E", "Arial", 60);
-            } else {
+            }
+            else
+            {
                 String ammoText = currentWeapon.getCurrentMagAmmo() + " / " + currentWeapon.getTotalAmmo();
                 drawText(width() - 120, height() - 20, ammoText, "Arial", 30);
             }
 
-            if (isAtEndTile) {
+            if (isAtEndTile)
+            {
                 changeColor(white);
                 drawCenteredText(height() - 100, "Press F to Activate", "Arial", 20, Font.PLAIN);
             }
@@ -485,7 +512,8 @@ public class Main extends GameEngine
             double endY = py + Math.sin(player.getAngle()) * lineLength;
             drawLine(px, py, endX, endY);
 
-            for (Enemy enemy : enemies) {
+            for (Enemy enemy : enemies)
+            {
                 enemy.drawOnMinimap(this);
             }
         }
@@ -516,10 +544,10 @@ public class Main extends GameEngine
         FontMetrics metrics = mGraphics.getFontMetrics();
         String title = "Alderaan";
         int textWidth = metrics.stringWidth(title);
-        int x = (width -textWidth) / 2;
+        int x = (width - textWidth) / 2;
         int y = 60;
         changeColor(white);
-        drawBoldText( x, y, title, "Arial", 60);
+        drawBoldText(x, y, title, "Arial", 60);
 
         mGraphics.setFont(new Font("Arial", Font.PLAIN, 30));
         metrics = mGraphics.getFontMetrics();
@@ -535,30 +563,32 @@ public class Main extends GameEngine
         }
     }
 
-    private void drawHowToPlay(){
+    private void drawHowToPlay()
+    {
         changeColor(new Color(200, 200, 200));
         drawCenteredText(60, "How to Play", "Arial", 40, Font.BOLD);
-        String[] lines = {
-                "You need to get to a life pod, and get off this ship.",
-                " ",
-                " ",
-                "Controls:",
-                "WASD: Move",
-                "Mouse: Look around",
-                "Left Click: Shoot",
-                "Q/E: Switch weapons",
-                "R: Reload",
-                "Reach the life pod to win"
-        };
+        String[] lines = {"You need to get to a life pod, and get off this ship.",
+                          " ",
+                          " ",
+                          "Controls:",
+                          "WASD: Move",
+                          "Mouse: Look around",
+                          "Left Click: Shoot",
+                          "Q/E: Switch weapons",
+                          "R: Reload",
+                          "Reach the life pod to win"};
         int lineHeight = 30;
         int startY = 100;
         drawCenteredText(startY, lines[0], "Arial", 20, Font.PLAIN);
-        for(int i = 1; i < lines.length; i++) {
-                drawText((double) this.mWidth / 8,  startY + i * lineHeight, lines[i], "Arial", 20);
+        for (int i = 1; i < lines.length; i++)
+        {
+            drawText((double)this.mWidth / 8, startY + i * lineHeight, lines[i], "Arial", 20);
         }
-        drawText((double) this.mWidth / 4 * 2, startY + 3 * lineHeight, "Press F at the doors like below:", "Arial", 20);
-        drawImage(subImage(loadImage("assets/visual/ScifiWall.png"), 512, 0, 128, 128), (double) this.mWidth / 4 * 2, startY + 4 * lineHeight);
-        drawText((double) this.mWidth / 4 * 2, startY + 5 * lineHeight + 128, "To advance to the next level", "Arial", 20);
+        drawText((double)this.mWidth / 4 * 2, startY + 3 * lineHeight, "Press F at the doors like below:", "Arial", 20);
+        drawImage(subImage(loadImage("assets/visual/ScifiWall.png"), 512, 0, 128, 128), (double)this.mWidth / 4 * 2,
+                  startY + 4 * lineHeight);
+        drawText((double)this.mWidth / 4 * 2, startY + 5 * lineHeight + 128, "To advance to the next level", "Arial",
+                 20);
         backButton.draw();
     }
 
@@ -566,12 +596,7 @@ public class Main extends GameEngine
     {
         changeColor(new Color(200, 200, 200));
         drawCenteredText(60, "Credits", "Arial", 40, Font.BOLD);
-        String[] lines = {
-                "Angelo Nicolson",
-                "Joshua Sim",
-                "Kale Twist",
-                "Johnny Chadwick-Watt"
-        };
+        String[] lines = {"Angelo Nicolson", "Joshua Sim", "Kale Twist", "Johnny Chadwick-Watt"};
         int lineHeight = 30;
         int startY = 120;
         for (int i = 0; i < lines.length; i++)
@@ -581,30 +606,33 @@ public class Main extends GameEngine
         backButton.draw();
     }
 
-    private void drawSettings(){
+    private void drawSettings()
+    {
         drawImage(menuBackground, 0, 0, width, height);
         changeColor(new Color(200, 200, 200));
         drawCenteredText(60, "Settings", "Arial", 40, Font.BOLD);
         // Draw difficulty label
         changeColor(white);
-        drawText(this.mWidth / 4.0 , 120.0,  "Difficulty:", "Arial", 24);
-        drawText((this.mWidth / 4.0) * 3 - 140 , 120.0,  "Graphics Quality:", "Arial", 24);
+        drawText(this.mWidth / 4.0, 120.0, "Difficulty:", "Arial", 24);
+        drawText((this.mWidth / 4.0) * 3 - 140, 120.0, "Graphics Quality:", "Arial", 24);
 
         // Draw setings buttons
-        for (Button button : settingsButtons) {
+        for (Button button : settingsButtons)
+        {
             button.draw();
         }
 
         backButton.draw();
     }
 
-
-    private void updateDifficultyButtons() {
+    private void updateDifficultyButtons()
+    {
         easyButton.selected = (difficulty == Difficulty.EASY);
         normalButton.selected = (difficulty == Difficulty.NORMAL);
         hardButton.selected = (difficulty == Difficulty.HARD);
     }
-    private void updateGraphicsQuality  () {
+    private void updateGraphicsQuality()
+    {
         highButton.selected = (quality == GraphicsQuality.HIGH);
         lowButton.selected = (quality == GraphicsQuality.LOW);
     }
@@ -616,13 +644,15 @@ public class Main extends GameEngine
             switch (e.getKeyCode())
             {
             case KeyEvent.VK_Q:
-                if(!qPressed){
+                if (!qPressed)
+                {
                     player.previousWeapon();
                     qPressed = true;
                 }
                 break;
             case KeyEvent.VK_E:
-                if(!ePressed){
+                if (!ePressed)
+                {
                     player.previousWeapon();
                     ePressed = true;
                 }
@@ -632,10 +662,11 @@ public class Main extends GameEngine
                 playAudio(soundReloadRifle);
                 break;
             case KeyEvent.VK_F:
-                if (isAtEndTile) {
-                advanceLevel();
-                isAtEndTile = false;
-                resetPlayer();
+                if (isAtEndTile)
+                {
+                    advanceLevel();
+                    isAtEndTile = false;
+                    resetPlayer();
                 }
                 break;
             default:
@@ -656,16 +687,17 @@ public class Main extends GameEngine
     {
         if (currentState == GameState.PLAYING)
         {
-            switch (e.getKeyCode()){
-                case KeyEvent.VK_Q:
-                    qPressed = false;
-                    break;
-                case KeyEvent.VK_E:
-                    ePressed = false;
-                    break;
-                default:
-                    updateDirection(e, false);
-                    break;
+            switch (e.getKeyCode())
+            {
+            case KeyEvent.VK_Q:
+                qPressed = false;
+                break;
+            case KeyEvent.VK_E:
+                ePressed = false;
+                break;
+            default:
+                updateDirection(e, false);
+                break;
             }
         }
     }
@@ -730,7 +762,8 @@ public class Main extends GameEngine
     }
     @Override public void mouseClicked(MouseEvent e)
     {
-        if(currentState == GameState.MAIN_MENU){
+        if (currentState == GameState.MAIN_MENU)
+        {
             int mx = e.getX();
             int my = e.getY();
             for (Button button : menuButtons)
@@ -743,7 +776,8 @@ public class Main extends GameEngine
             }
         }
 
-        else if(currentState == GameState.HOW_TO_PLAY || currentState == GameState.CREDITS){
+        else if (currentState == GameState.HOW_TO_PLAY || currentState == GameState.CREDITS)
+        {
             int mx = e.getX();
             int my = e.getY();
             if (backButton.contains(mx, my))
@@ -752,11 +786,14 @@ public class Main extends GameEngine
             }
         }
 
-        else if (currentState == GameState.SETTINGS) {
+        else if (currentState == GameState.SETTINGS)
+        {
             int mx = e.getX();
             int my = e.getY();
-            for (Button button : settingsButtons) {
-                if (button.contains(mx, my)) {
+            for (Button button : settingsButtons)
+            {
+                if (button.contains(mx, my))
+                {
                     button.action.run();
                     break;
                 }
@@ -772,49 +809,58 @@ public class Main extends GameEngine
             Weapon currentWeapon = player.getCurrentWeapon();
             if (player.getCurrentWeapon().tryFire())
             {
-                if(currentWeapon.getFireSound() != null){
+                if (currentWeapon.getFireSound() != null)
+                {
                     playAudio(currentWeapon.getFireSound());
                 }
 
-                //Shooting logic
-                int centralRayIndex = raycaster.getNumRays() / 2; //with numRays being 1024
+                // Shooting logic
+                int centralRayIndex = raycaster.getNumRays() / 2; // with numRays being 1024
                 double wallDistance = raycaster.getRayDistances(centralRayIndex);
-                double angleTolerance  = Math.toRadians(1); //aiming tolerance = 1 degree
+                double angleTolerance = Math.toRadians(1); // aiming tolerance = 1 degree
                 Enemy hitEnemy = null;
                 double minDistance = Double.MAX_VALUE;
                 double playerAngle = player.getAngle();
-                for (Enemy enemy : enemies) {
+                for (Enemy enemy : enemies)
+                {
                     double dx = enemy.getX() - player.getX();
                     double dy = enemy.getY() - player.getY();
                     double enemyAngle = Math.atan2(dy, dx);
                     double angleDiff = normalizeAngle(enemyAngle - playerAngle);
-                    if (Math.abs(angleDiff) < angleTolerance) {
+                    if (Math.abs(angleDiff) < angleTolerance)
+                    {
                         double distance = Math.sqrt(dx * dx + dy * dy);
-                        if (distance < minDistance && distance < wallDistance) {
+                        if (distance < minDistance && distance < wallDistance)
+                        {
                             minDistance = distance;
                             hitEnemy = enemy;
                         }
                     }
                 }
 
-                if (hitEnemy != null){
+                if (hitEnemy != null)
+                {
                     int damage = currentWeapon.getDamage();
                     hitEnemy.takeDamage(damage);
                     playAudio(soundLazerHit);
-                    if(!hitEnemy.isAlive()) {
+                    if (!hitEnemy.isAlive())
+                    {
                         playAudio(soundZombieDeath);
                     }
                 }
-
             }
         }
     }
 
-    private void initializePlayer(List<Weapon> weapons) {
-        outer:
-        for (int y = 0; y < GameMap.HEIGHT; y++) {
-            for (int x = 0; x < GameMap.WIDTH; x++) {
-                if (gameMap.isWalkableTile(x, y)) {
+    private void initializePlayer(List<Weapon> weapons)
+    {
+    outer:
+        for (int y = 0; y < GameMap.HEIGHT; y++)
+        {
+            for (int x = 0; x < GameMap.WIDTH; x++)
+            {
+                if (gameMap.isWalkableTile(x, y))
+                {
                     double px = x * TILE_SIZE + TILE_SIZE / 2.0;
                     double py = y * TILE_SIZE + TILE_SIZE / 2.0;
                     player = new Player(px, py, gameMap, TILE_SIZE, weapons);
@@ -824,7 +870,8 @@ public class Main extends GameEngine
         }
     }
 
-    private void startNewGame() {
+    private void startNewGame()
+    {
         currentLevel = 0;
         advanceLevel();
         List<Weapon> initialWeapons = createInitialWeapons();
@@ -836,11 +883,15 @@ public class Main extends GameEngine
         down = false;
     }
 
-    private void resetPlayer() {
-        outer:
-        for (int y = 0; y < GameMap.HEIGHT; y++) {
-            for (int x = 0; x < GameMap.WIDTH; x++) {
-                if (gameMap.isWalkableTile(x, y)) {
+    private void resetPlayer()
+    {
+    outer:
+        for (int y = 0; y < GameMap.HEIGHT; y++)
+        {
+            for (int x = 0; x < GameMap.WIDTH; x++)
+            {
+                if (gameMap.isWalkableTile(x, y))
+                {
                     double px = x * TILE_SIZE + TILE_SIZE / 2.0;
                     double py = y * TILE_SIZE + TILE_SIZE / 2.0;
                     player.setX(px);
@@ -858,61 +909,73 @@ public class Main extends GameEngine
         startNewGame();
     }
 
-    public AudioClip getSoundPlayerInjured() {
+    public AudioClip getSoundPlayerInjured()
+    {
         return soundPlayerInjured;
     }
 
-    private double normalizeAngle(double angle) {
-        while (angle < -Math.PI) angle += 2 * Math.PI;
-        while (angle > Math.PI) angle -= 2 * Math.PI;
+    private double normalizeAngle(double angle)
+    {
+        while (angle < -Math.PI)
+            angle += 2 * Math.PI;
+        while (angle > Math.PI)
+            angle -= 2 * Math.PI;
         return angle;
     }
 
-    private void spawnLevelEntities() {
+    private void spawnLevelEntities()
+    {
         enemies.clear();
         healthItems.clear();
         weaponItems.clear();
 
         List<int[]> walkableTiles = new ArrayList<>();
-        for (int y = 0; y < GameMap.HEIGHT; y++) {
-            for (int x = 0; x < GameMap.WIDTH; x++) {
-                if (gameMap.isWalkableTile(x, y)) {
-                    walkableTiles.add(new int[]{x, y});
+        for (int y = 0; y < GameMap.HEIGHT; y++)
+        {
+            for (int x = 0; x < GameMap.WIDTH; x++)
+            {
+                if (gameMap.isWalkableTile(x, y))
+                {
+                    walkableTiles.add(new int[] {x, y});
                 }
             }
         }
 
-        //Enemy count we determine by level and difficulty
+        // Enemy count we determine by level and difficulty
         int easyBase = 7 + (currentLevel - 1) * 2; // base enemies are - level 1: 7, Level 2: 9, Level 3: 11
         int adjustment = 0;
-        if (difficulty == Difficulty.NORMAL) {
+        if (difficulty == Difficulty.NORMAL)
+        {
             adjustment = 2;
-        } else if (difficulty == Difficulty.HARD) {
+        }
+        else if (difficulty == Difficulty.HARD)
+        {
             adjustment = 4;
         }
-        int enemyCount = easyBase +adjustment;
-
+        int enemyCount = easyBase + adjustment;
 
         int zombieDamage;
-        switch (difficulty) {
-            case EASY:
-                zombieDamage = 5;
-                break;
-            case NORMAL:
-                zombieDamage =10;
-                break;
-            case HARD:
-                zombieDamage = 20;
-                break;
-            default:
-                zombieDamage = 10;
+        switch (difficulty)
+        {
+        case EASY:
+            zombieDamage = 5;
+            break;
+        case NORMAL:
+            zombieDamage = 10;
+            break;
+        case HARD:
+            zombieDamage = 20;
+            break;
+        default:
+            zombieDamage = 10;
         }
-
 
         // Spawn enemies
         Random rand = new Random();
-        for (int i = 0; i < enemyCount; i++) {
-            if (walkableTiles.isEmpty()) break;
+        for (int i = 0; i < enemyCount; i++)
+        {
+            if (walkableTiles.isEmpty())
+                break;
             int index = rand.nextInt(walkableTiles.size());
             int[] tile = walkableTiles.get(index);
             double ex = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
@@ -921,17 +984,23 @@ public class Main extends GameEngine
         }
 
         int healthItemCount;
-        if (difficulty == Difficulty.EASY){
+        if (difficulty == Difficulty.EASY)
+        {
             healthItemCount = 6;
-        }else if (difficulty == Difficulty.NORMAL){
+        }
+        else if (difficulty == Difficulty.NORMAL)
+        {
             healthItemCount = 4;
-        }else{ // HARD
+        }
+        else
+        { // HARD
             healthItemCount = 2;
         }
 
         // Spawn health items
         List<int[]> availableTiles = new ArrayList<>(walkableTiles);
-        for (int i = 0; i < healthItemCount && !availableTiles.isEmpty(); i++) {
+        for (int i = 0; i < healthItemCount && !availableTiles.isEmpty(); i++)
+        {
             int index = rand.nextInt(availableTiles.size());
             int[] tile = availableTiles.remove(index);
             double hx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
@@ -941,89 +1010,98 @@ public class Main extends GameEngine
 
         int rifleDamage;
         int shotgunDamage;
-        switch (difficulty) {
-            case EASY:
-                rifleDamage = 20;
-                shotgunDamage = 30;
-                break;
-            case NORMAL:
-                rifleDamage = 15;
-                shotgunDamage = 25;
-                break;
-            case HARD:
-                rifleDamage = 10;
-                shotgunDamage = 20;
-                break;
-            default:
-                rifleDamage = 15;
-                shotgunDamage = 25;
+        switch (difficulty)
+        {
+        case EASY:
+            rifleDamage = 20;
+            shotgunDamage = 30;
+            break;
+        case NORMAL:
+            rifleDamage = 15;
+            shotgunDamage = 25;
+            break;
+        case HARD:
+            rifleDamage = 10;
+            shotgunDamage = 20;
+            break;
+        default:
+            rifleDamage = 15;
+            shotgunDamage = 25;
         }
 
-
         // Spawn Laser Rifle
-        if (!availableTiles.isEmpty()) {
+        if (!availableTiles.isEmpty())
+        {
             int index = rand.nextInt(availableTiles.size());
             int[] tile = availableTiles.remove(index);
             double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
             double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
-            Weapon lazerRifle = new Weapon("Laser Rifle", rifleDamage, 10, 30, 90, false, lazerRifleSprite, soundLazer2);
+            Weapon lazerRifle =
+                new Weapon("Laser Rifle", rifleDamage, 10, 30, 90, false, lazerRifleSprite, soundLazer2);
             weaponItems.add(new WeaponItem(wx, wy, lazerRiflePickup, lazerRifle));
         }
 
         // SpawnShotgun
-        if (!availableTiles.isEmpty()) {
+        if (!availableTiles.isEmpty())
+        {
             int index = rand.nextInt(availableTiles.size());
             int[] tile = availableTiles.remove(index);
             double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
             double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
-            Weapon lazerShotgun = new Weapon("Laser Shotgun", shotgunDamage, 2, 8, 24, false, lazerShotgunSprite, soundLazer3);
+            Weapon lazerShotgun =
+                new Weapon("Laser Shotgun", shotgunDamage, 2, 8, 24, false, lazerShotgunSprite, soundLazer3);
             weaponItems.add(new WeaponItem(wx, wy, lazerShotgunPickup, lazerShotgun));
         }
     }
 
-    private List<Weapon> createInitialWeapons() {
+    private List<Weapon> createInitialWeapons()
+    {
         int pistolDamage;
-        switch (difficulty) {
-            case EASY:
-                pistolDamage = 15;
-                break;
-            case NORMAL:
-                pistolDamage = 10;
-                break;
-            case HARD:
-                pistolDamage = 5;
-                break;
-            default:
-                pistolDamage = 10;
+        switch (difficulty)
+        {
+        case EASY:
+            pistolDamage = 15;
+            break;
+        case NORMAL:
+            pistolDamage = 10;
+            break;
+        case HARD:
+            pistolDamage = 5;
+            break;
+        default:
+            pistolDamage = 10;
         }
         Image laserPistolSprite = gameAsset.getLazerPistol();
         AudioClip laserPistolSound = soundLazer1;
-        Weapon laserPistol = new Weapon("Laser Pistol", pistolDamage, 5, 10, 0, true, laserPistolSprite, laserPistolSound);
+        Weapon laserPistol =
+            new Weapon("Laser Pistol", pistolDamage, 5, 10, 0, true, laserPistolSprite, laserPistolSound);
         List<Weapon> weapons = new ArrayList<>();
         weapons.add(laserPistol);
         return weapons;
     }
 
-    private void advanceLevel(){
+    private void advanceLevel()
+    {
         String mapFileName = "maps/Level01.txt";
 
-        currentLevel++; //advance to the next level
+        currentLevel++; // advance to the next level
 
-        switch (currentLevel) {
-            case 1:
-                mapFileName = "maps/Level01.txt";
-                break;
-            case 2:
-                mapFileName = "maps/Level02.txt";
-                break;
-            case 3:
-                mapFileName = "maps/Level03.txt";
-                break; 
-            case 4:
-                System.out.println("WIN WIN WIN");
-                break;   
-            default:
-                mapFileName = "maps/Level01.txt";
+        switch (currentLevel)
+        {
+        case 1:
+            mapFileName = "maps/Level01.txt";
+            break;
+        case 2:
+            mapFileName = "maps/Level02.txt";
+            break;
+        case 3:
+            mapFileName = "maps/Level03.txt";
+            break;
+        case 4:
+            System.out.println("WIN WIN WIN");
+            break;
+        default:
+            mapFileName = "maps/Level01.txt";
         }
 
         // Load map from file name

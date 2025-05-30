@@ -17,8 +17,6 @@ public class Player extends Entity
     private List<Weapon> weapons;
     private int currentWeapon;
 
-
-
     public Player(double x, double y, GameMap map, int mapS, List<Weapon> initialWeapons)
     {
         super(x, y);
@@ -75,7 +73,8 @@ public class Player extends Entity
         this.verticalLookOffset = Math.max(-150, Math.min(150, offset));
     }
 
-    public void setAngle(double angle) {
+    public void setAngle(double angle)
+    {
         this.angle = angle;
     }
 
@@ -128,12 +127,14 @@ public class Player extends Entity
 
         // Collision detection for X movement
         // Check if moving to nextX would hit a wall, if not, update x
-        if (!isWall(nextX, y)){
+        if (!isWall(nextX, y))
+        {
             x = nextX;
         }
         // Collision detection for Y movement
         // Check if moving to nextY would hit a wall, if not, update y
-        if (!isWall(x, nextY)){
+        if (!isWall(x, nextY))
+        {
             y = nextY;
         }
     }
@@ -164,8 +165,6 @@ public class Player extends Entity
 
         // return map.getGrid()[tileY][tileX] >= 1 && map.getGrid()[tileY][tileX] < 9;
     }
-
-
 
     // Health Logic
 
@@ -233,7 +232,8 @@ public class Player extends Entity
     {
         for (Weapon w : weapons)
         {
-            if (w.getName().equals(newWeapon.getName())) {
+            if (w.getName().equals(newWeapon.getName()))
+            {
                 if (!w.isUnlimitedAmmo())
                 {
                     w.addAmmo(30); // Add 30 ammo if weapon exists

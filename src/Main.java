@@ -514,7 +514,7 @@ public class Main extends GameEngine
 
             for (Enemy enemy : enemies)
             {
-                enemy.drawOnMinimap(this);
+                enemy.drawOnMinimap(this, player);
             }
         }
         else if (currentState == GameState.GAME_OVER)

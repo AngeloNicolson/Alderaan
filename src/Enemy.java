@@ -1,4 +1,4 @@
-import java.awt.Image;
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,7 +12,10 @@ public class Enemy extends Entity
     // Sprite varibles
     private String enemyType;
     private Image spriteSheet;
+    private Image hitSheet;
     private Image[][] animations; // [state][frame]
+    private Image[][] hitAnimations; // [state][frame]
+
 
     private int frameWidth, frameHeight;
     private int[] framesPerState = {5, 1, 6, 3, 5}; // IDLE=5, ALERTED=1, CHASING=6, ATTACKING=3, DEAD=5 frames
@@ -42,6 +45,10 @@ public class Enemy extends Entity
     //Health
     private int maxHealth = 100;
     private int currentHealth = maxHealth;
+    private boolean hit = false;
+    private double hitTimer = 0;
+    Composite orig ;
+
 
     public Enemy(double x, double y, String enemyType, GameMap map, int mapS)
     {
@@ -52,26 +59,33 @@ public class Enemy extends Entity
 
         this.ai = new EnemyAI(map, mapS);
         this.spriteSheet = GameEngine.loadImage("assets/visual/StormZombieSpritesheet.png");
-
+        this.hitSheet = GameEngine.loadImage("assets/visual/StormZombieSpritesheetRedTint.png");
         // Updated frame size for new spritesheet dimensions: 683 x 1024 (TODO: Change back once we get final
         // spritesheets)
         this.frameWidth = 432 / 6;       // 683 / 6 columns (approximate)
         this.frameHeight = 576 / 8; // Updated: 9 rows instead of 8
         animations = new Image[5][]; // IDLE, ALERTED, CHASING, ATTACKING, DEAD
+        hitAnimations = new Image[4][];
+        this.orig = null;
 
         // IDLE row 7 has 5 columns (directions)
+        hitAnimations[0] = new Image[5];
         animations[0] = new Image[5];
         for (int col = 0; col < 5; col++)
         {
             animations[0][col] =
                 GameEngine.subImage(spriteSheet, col * frameWidth, 7 * frameHeight, frameWidth, frameHeight);
+            hitAnimations[0][col] =
+                    GameEngine.subImage(hitSheet, col * frameWidth, 7 * frameHeight, frameWidth, frameHeight);
         }
 
         // ALERTED uses a single static frame (row 0 col 0)
         animations[1] = new Image[] {GameEngine.subImage(spriteSheet, 0, 0, frameWidth, frameHeight)};
+        hitAnimations[1] = new Image[] {GameEngine.subImage(hitSheet, 0, 0, frameWidth, frameHeight)};
 
         // CHASING: 8 directions (rows 0-7), each with 6 frames (columns)
         animations[2] = new Image[8 * 6];
+        hitAnimations[2] = new Image[8*6];
         for (int dir = 0; dir < 8; dir++)
         {
             for (int frame = 0; frame < 6; frame++)
@@ -79,11 +93,14 @@ public class Enemy extends Entity
                 int index = dir * 6 + frame;
                 animations[2][index] =
                     GameEngine.subImage(spriteSheet, frame * frameWidth, dir * frameHeight, frameWidth, frameHeight);
+                hitAnimations[2][index] = GameEngine.subImage(hitSheet, frame * frameWidth, dir * frameHeight, frameWidth, frameHeight);
             }
         }
         animations[3] = new Image[3];
+        hitAnimations[3] = new Image[3];
         for (int att = 0; att < 3; att++) {
             animations[3][att] = GameEngine.subImage(spriteSheet, att * frameWidth, 7 * frameHeight, frameWidth, frameHeight);
+            hitAnimations[3][att] = GameEngine.subImage(hitSheet, att * frameWidth, 7 * frameHeight, frameWidth, frameHeight);
         }
         animations[4] = new Image[5];
         for (int dead = 0; dead < 5; dead ++) {
@@ -96,6 +113,13 @@ public class Enemy extends Entity
         //Every frame we decrease cooldown timer
         if (cooldownTimer > 0) {
             cooldownTimer -= dt;
+        }
+        if (hit) {
+            hitTimer += dt;
+            if (hitTimer > 0.1) {
+                hit = false;
+                hitTimer = 0;
+            }
         }
 
         EnemyAI.AIState oldState = ai.getState();
@@ -185,6 +209,9 @@ public class Enemy extends Entity
         if (newState == EnemyAI.AIState.DEAD && deathTimer > frameDuration * 4) {
             currentFrame = 4;
         }
+        if (orig == null) {
+            orig = engine.mGraphics.getComposite();
+        }
     }
 
     public EnemyAI.AIState getAIState()
@@ -225,6 +252,7 @@ public class Enemy extends Entity
 
         int stateIndex = getAIState().ordinal();
         Image fullFrame;
+        Image hitFrame = null;
         boolean flipHorizontal = false;
 
         int dir8;
@@ -247,11 +275,15 @@ public class Enemy extends Entity
 
             int col = currentFrame % 6;
             fullFrame = animations[2][drawDir * 6 + col];
+            hitFrame = hitAnimations[2][drawDir * 6 + col];
+
         }else if (stateIndex == EnemyAI.AIState.ATTACKING.ordinal()) {
             if ( attackCooldown - cooldownTimer < frameDuration * 2) {
                 fullFrame = animations[3][currentFrame];
+                hitFrame = hitAnimations[3][currentFrame];
             }else {
                 fullFrame = animations[0][0];
+                hitFrame = hitAnimations[0][0];
             }
         }else if (stateIndex == EnemyAI.AIState.DEAD.ordinal()) {
             fullFrame = animations[4][currentFrame];
@@ -272,6 +304,7 @@ public class Enemy extends Entity
                 mappedDir = 4;
 
             fullFrame = animations[0][mappedDir];
+            hitFrame = hitAnimations[0][mappedDir];
         }
         else if (stateIndex == EnemyAI.AIState.IDLE.ordinal())
         {
@@ -289,23 +322,45 @@ public class Enemy extends Entity
                 mappedDir = 4;
 
             fullFrame = animations[0][mappedDir];
+            hitFrame = hitAnimations[0][mappedDir];
         }
         else
         {
             fullFrame = animations[1][0];
+            hitFrame = hitAnimations[1][0];
         }
 
         int frameW = fullFrame.getWidth(null);
         int frameH = fullFrame.getHeight(null);
         Image[] slices = spriteSlices.get(fullFrame);
+        Image[] hitSlices = null;
+        Map<Image, Image[]> hitSpriteSlices = new HashMap<Image, Image[]>();
+        if (hit && hitFrame != null) {
+            hitSlices = spriteSlices.get(hitFrame);
+        }
         if (slices == null)
         {
             slices = new Image[frameW];
             for (int i = 0; i < frameW; i++)
             {
                 slices[i] = GameEngine.subImage(fullFrame, i, 0, 1, frameH);
+                if (hit && hitSlices != null) {
+                    hitSlices[i] = GameEngine.subImage(hitFrame, i, 0, 1, frameH);
+                }
             }
             spriteSlices.put(fullFrame, slices);
+            if (hit && hitSlices != null) {
+                hitSpriteSlices.put(hitFrame, hitSlices);
+            }
+        }
+        if (hitSlices == null && hit) {
+            hitSlices = new Image[frameW];
+            for (int i = 0; i < frameW; i++)
+            {
+                hitSlices[i] = GameEngine.subImage(hitFrame, i, 0, 1, frameH);
+            }
+            hitSpriteSlices.put(hitFrame, hitSlices);
+
         }
 
         for (int i = 0; i < (int)spriteWidth; i++)
@@ -324,13 +379,24 @@ public class Enemy extends Entity
                 {
                     int flippedX = slices.length - 1 - pixelX;
                     g.drawImage(slices[flippedX], screenX + i, screenY, 1, (int)spriteHeight);
+                    if (hit && hitSlices != null && ai.getState() != EnemyAI.AIState.DEAD) {
+                        g.mGraphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+                        g.drawImage(hitSlices[flippedX], screenX + i, screenY, 1, (int) spriteHeight);
+                        g.mGraphics.setComposite(orig);
+                    }
                 }
                 else
                 {
                     g.drawImage(slices[pixelX], screenX + i, screenY, 1, (int)spriteHeight);
+                    if (hit && hitSlices != null && ai.getState() != EnemyAI.AIState.DEAD) {
+                        g.mGraphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+                        g.drawImage(hitSlices[pixelX], screenX + i, screenY, 1, (int) spriteHeight);
+                        g.mGraphics.setComposite(orig);
+                    }
                 }
             }
         }
+
     }
 
     private double normalizeAngle(double angle)
@@ -429,7 +495,7 @@ public class Enemy extends Entity
         double miniX = (x / mapS) * miniTileSize + offsetX;
         double miniY = (y / mapS) * miniTileSize + offsetY;
 
-        g.changeColor(java.awt.Color.RED);
+        g.changeColor(Color.RED);
         g.drawSolidCircle(miniX, miniY, 4);
 
         double lineLength = 10;
@@ -442,6 +508,8 @@ public class Enemy extends Entity
     //Health and Damage logic
     public void takeDamage(int amt)
     {
+        hit = true;
+        hitTimer = 0;
         currentHealth -= amt;
         if (currentHealth < 0)
         {

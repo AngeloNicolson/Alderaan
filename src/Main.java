@@ -337,7 +337,7 @@ public class Main extends GameEngine
                 isAtEndTile = true;
                 System.out.println("Standing on end tile");
             } else {
-                isAtEndTile =false;
+                isAtEndTile = false;
             }
 
         }

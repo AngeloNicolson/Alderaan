@@ -12,8 +12,15 @@ enum GameState
     MAIN_MENU,
     HOW_TO_PLAY,
     CREDITS,
+    SETTINGS,
     PLAYING,
     GAME_OVER,
+}
+
+enum Difficulty {
+    EASY,
+    NORMAL,
+    HARD
 }
 
 
@@ -30,6 +37,7 @@ public class Main extends GameEngine
     private GameState currentState;
     private boolean isAtEndTile;
     private int currentLevel;
+    private Difficulty difficulty = Difficulty.NORMAL;
     // Window size
     private int width = 1024;
     private int height = 512;
@@ -56,6 +64,8 @@ public class Main extends GameEngine
     private AudioClip soundLazerHit;
     private AudioClip soundPlayerInjured;
     private AudioClip soundPlayerWalking;
+    private AudioClip soundReloadRifle;
+    private AudioClip soundReloadShotgun;
     private AudioClip soundWinDoorOpen;
     private AudioClip soundWinLaunch;
     private AudioClip soundZombieDeath;
@@ -71,12 +81,15 @@ public class Main extends GameEngine
     private Cursor defaultCursor;
     private Image gameOverBackground;
     private Button backButton;
+    private List<Button> settingsButtons = new ArrayList<>();
+    private Button easyButton, normalButton, hardButton;
 
 
     private class Button{
         int x, y, width, height;
         String text;
         Runnable action;
+        boolean selected;
 
         Button(int x, int y, int width, int height, String text, Runnable action){
             this.x = x;
@@ -85,6 +98,8 @@ public class Main extends GameEngine
             this.height = height;
             this.text = text;
             this.action = action;
+            this.selected = false;
+
         }
 
         boolean contains(int mx, int my){
@@ -93,7 +108,11 @@ public class Main extends GameEngine
 
         void draw()
         {
-            changeColor(new Color(30, 30, 30, 150));
+            if (selected){
+                changeColor(new Color(60, 60, 60, 200));
+            } else{
+                changeColor(new Color(30, 30, 30, 150));
+            }
             drawSolidRectangle(x, y, width, height);
             changeColor(white);
             mGraphics.setFont(new Font("Arial", Font.PLAIN, 20));
@@ -143,18 +162,40 @@ public class Main extends GameEngine
         int startY = (height - ( buttonHeight + 3 * buttonSpacing)) / 2;
 
         menuButtons.add(new Button(startX, startY, buttonWidth, buttonHeight, "Start Game", () -> {
-            currentState = GameState.PLAYING;
+            startNewGame();
         }));
 
         menuButtons.add(new Button(startX, startY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight, "How to Play", () -> {
             currentState = GameState.HOW_TO_PLAY;
         }));
         menuButtons.add(new Button(startX, startY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "Settings", () -> {
-            // Placeholder
+            currentState = GameState.SETTINGS;
         }));
         menuButtons.add(new Button(startX, startY + 3 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "Credits", () -> {
             currentState = GameState.CREDITS;
         }));
+
+        easyButton = new Button(startX, startY, buttonWidth, buttonHeight, "Easy", () -> {
+            difficulty = Difficulty.EASY;
+            updateDifficultyButtons();
+        });
+        normalButton = new Button(startX, startY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight, "Normal", () -> {
+            difficulty = Difficulty.NORMAL;
+            updateDifficultyButtons();
+        });
+        hardButton = new Button(startX, startY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "Hard", () -> {
+            difficulty = Difficulty.HARD;
+            updateDifficultyButtons();
+        });
+
+        settingsButtons.add(easyButton);
+        settingsButtons.add(normalButton);
+        settingsButtons.add(hardButton);
+
+        updateDifficultyButtons();
+
+
+
 
         int backButtonWidth = 100;
         int backButtonHeight = 40;
@@ -172,7 +213,7 @@ public class Main extends GameEngine
         //initialise the game map
         gameMap = new GameMap();
         currentLevel = 0; //start at 0, and will auto increment to level 1
-        advanceLevel(); //sets up map
+
         
 
         setWindowSize(width, height);
@@ -188,35 +229,8 @@ public class Main extends GameEngine
         soundZombieDeath = loadAudio("assets/audio/SoundZombieDeath.wav");
         soundZombieNeutral = loadAudio("assets/audio/SoundZombieNeutral.wav");
         soundPickupItem = loadAudio("assets/audio/SoundPickupItem.wav");
-
-
-        // Collect all walkable tiles for enemy spawning
-        List<int[]> walkableTiles = new ArrayList<>();
-        for (int y = 0; y < GameMap.HEIGHT; y++)
-        {
-            for (int x = 0; x < GameMap.WIDTH; x++)
-            {
-                if (gameMap.isWalkableTile(x, y))
-                    walkableTiles.add(new int[] {x, y});
-            }
-        }
-
-        // Adds the enemies
-        Random rand = new Random();
-        int enemyCount = 7;
-        enemies.clear(); // clear existing enemies if any
-        for (int i = 0; i < enemyCount; i++)
-        {
-            // Pick a random tile index
-            int[] tile = walkableTiles.get(rand.nextInt(walkableTiles.size()));
-
-            double ex = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
-            double ey = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
-
-            enemies.add(new Enemy(ex, ey, "", gameMap, TILE_SIZE));
-        }
-
-
+        soundReloadRifle = loadAudio("assets/audio/SoundReloadRifle.wav");
+        soundReloadShotgun = loadAudio("assets/audio/SoundReloadShotgun.wav\"");
 
         // Initialize ray caster and associated objects
         gameAsset = new GameAsset();
@@ -225,46 +239,8 @@ public class Main extends GameEngine
         lazerShotgunSprite = gameAsset.getLazerShotgun();
         lazerRiflePickup = gameAsset.getLazerRiflePickup();
         lazerShotgunPickup = gameAsset.getLazerShotgunPickup();
-        Image laserPistolSprite = gameAsset.getLazerPistol();
-        AudioClip laserPistolSound = soundLazer1;
-        Weapon laserPistol = new Weapon("Laser Pistol", 10, 5, 10, 0, true, laserPistolSprite, laserPistolSound);
-        List<Weapon> initialWeapons = new ArrayList<>();
-        initialWeapons.add(laserPistol);
-        this.initialWeapons = initialWeapons;
 
-
-        //Spawn Health Items
-        List<int[]> availableTiles = new ArrayList<>(walkableTiles);
-        for(int i = 0; i<4 && !availableTiles.isEmpty(); i++){
-            int index = rand.nextInt(availableTiles.size());
-            int[] tile = availableTiles.remove(index);
-            double hx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
-            double hy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
-            healthItems.add(new HealthItem(hx, hy, gameAsset.getHealthItemSprite()));
-        }
-
-        //Lazer Rifle
-        if (!availableTiles.isEmpty()) {
-            int index = rand.nextInt(availableTiles.size());
-            int[] tile = availableTiles.remove(index);
-            double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
-            double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
-            Weapon lazerRifle = new Weapon("Laser Rifle", 15, 10, 30, 90, false, lazerRifleSprite, soundLazer2);
-            weaponItems.add(new WeaponItem(wx, wy, lazerRiflePickup, lazerRifle));
-        }
-
-        //Lazer Shotgun
-        if (!availableTiles.isEmpty()) {
-            int index = rand.nextInt(availableTiles.size());
-            int[] tile = availableTiles.remove(index);
-            double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
-            double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
-            Weapon lazerShotgun = new Weapon("Laser Shotgun", 25, 2, 8, 24, false, lazerShotgunSprite, soundLazer3);
-            weaponItems.add(new WeaponItem(wx, wy, lazerShotgunPickup, lazerShotgun));
-        }
-
-        //Initialize Player
-        initializePlayer(initialWeapons);
+        advanceLevel(); //sets up map
         isAtEndTile = false;
 
 
@@ -284,8 +260,7 @@ public class Main extends GameEngine
 
     @Override public void update(double dt)
     {
-        player.setDirection(left, right, up, down);
-        player.update(this, dt);
+
         // Update Enemies
         if (currentState == GameState.PLAYING)
         {
@@ -310,7 +285,7 @@ public class Main extends GameEngine
                     double distance = Math.sqrt(dx * dx + dy * dy);
                     if (distance < TILE_SIZE / 2) { // the pickup range
                         healthItem.consume(player);
-                        playAudio(soundPickupItem); //to be added
+                        playAudio(soundPickupItem);
                     }
                 }
             }
@@ -335,7 +310,7 @@ public class Main extends GameEngine
             //Check Standing on End Tile
             if (gameMap.isEndTile((int) player.getX()/TILE_SIZE, (int) player.getY()/TILE_SIZE)) {
                 isAtEndTile = true;
-                System.out.println("Standing on end tile");
+                //System.out.println("Standing on end tile");
             } else {
                 isAtEndTile = false;
             }
@@ -353,6 +328,10 @@ public class Main extends GameEngine
             getFrame().setCursor(defaultCursor);
             drawImage(menuBackground, 0, 0, width, height);
             drawHowToPlay();
+        }
+        else if (currentState == GameState.SETTINGS) {
+            getFrame().setCursor(defaultCursor);
+            drawSettings();
         }
         else if(currentState == GameState.CREDITS){
             getFrame().setCursor(defaultCursor);
@@ -459,6 +438,10 @@ public class Main extends GameEngine
                 drawText(width() - 120, height() - 20, ammoText, "Arial", 30);
             }
 
+            if (isAtEndTile) {
+                changeColor(white);
+                drawCenteredText(height() - 100, "Press F to Activate", "Arial", 20, Font.PLAIN);
+            }
 
             // Draw minimap border (outside blackout)
             changeColor(white);
@@ -576,6 +559,28 @@ public class Main extends GameEngine
         backButton.draw();
     }
 
+    private void drawSettings(){
+        drawImage(menuBackground, 0, 0, width, height);
+        changeColor(new Color(200, 200, 200));
+        drawCenteredText(60, "Settings", "Arial", 40, Font.BOLD);
+        // Draw difficulty label
+        changeColor(white);
+        drawCenteredText(120, "Difficulty:", "Arial", 24, Font.PLAIN);
+        // Draw setings buttons
+        for (Button button : settingsButtons) {
+            button.draw();
+        }
+
+        backButton.draw();
+    }
+
+
+    private void updateDifficultyButtons() {
+        easyButton.selected = (difficulty == Difficulty.EASY);
+        normalButton.selected = (difficulty == Difficulty.NORMAL);
+        hardButton.selected = (difficulty == Difficulty.HARD);
+    }
+
     @Override public void keyPressed(KeyEvent e)
     {
         if (currentState == GameState.PLAYING)
@@ -596,6 +601,7 @@ public class Main extends GameEngine
                 break;
             case KeyEvent.VK_R:
                 player.getCurrentWeapon().reload();
+                playAudio(soundReloadRifle);
                 break;
             case KeyEvent.VK_F:
                 if (isAtEndTile) {
@@ -718,12 +724,26 @@ public class Main extends GameEngine
             }
         }
 
+        else if (currentState == GameState.SETTINGS) {
+            int mx = e.getX();
+            int my = e.getY();
+            for (Button button : settingsButtons) {
+                if (button.contains(mx, my)) {
+                    button.action.run();
+                    break;
+                }
+            }
+            if (backButton.contains(mx, my))
+            {
+                backButton.action.run();
+            }
+        }
+
         else if (currentState == GameState.PLAYING && e.getButton() == MouseEvent.BUTTON1)
         {
             Weapon currentWeapon = player.getCurrentWeapon();
             if (player.getCurrentWeapon().tryFire())
             {
-                System.out.println("Fired " + player.getCurrentWeapon().getName());
                 if(currentWeapon.getFireSound() != null){
                     playAudio(currentWeapon.getFireSound());
                 }
@@ -776,6 +796,18 @@ public class Main extends GameEngine
         }
     }
 
+    private void startNewGame() {
+        currentLevel = 0;
+        advanceLevel();
+        List<Weapon> initialWeapons = createInitialWeapons();
+        initializePlayer(initialWeapons);
+        currentState = GameState.PLAYING;
+        left = false;
+        right = false;
+        up = false;
+        down = false;
+    }
+
     private void resetPlayer() {
         outer:
         for (int y = 0; y < GameMap.HEIGHT; y++) {
@@ -795,12 +827,7 @@ public class Main extends GameEngine
 
     private void restartGame()
     {
-        initializePlayer(initialWeapons);
-        currentState = GameState.PLAYING;
-        left = false;
-        right = false;
-        up = false;
-        down = false;
+        startNewGame();
     }
 
     public AudioClip getSoundPlayerInjured() {
@@ -811,6 +838,142 @@ public class Main extends GameEngine
         while (angle < -Math.PI) angle += 2 * Math.PI;
         while (angle > Math.PI) angle -= 2 * Math.PI;
         return angle;
+    }
+
+    private void spawnLevelEntities() {
+        enemies.clear();
+        healthItems.clear();
+        weaponItems.clear();
+
+        List<int[]> walkableTiles = new ArrayList<>();
+        for (int y = 0; y < GameMap.HEIGHT; y++) {
+            for (int x = 0; x < GameMap.WIDTH; x++) {
+                if (gameMap.isWalkableTile(x, y)) {
+                    walkableTiles.add(new int[]{x, y});
+                }
+            }
+        }
+
+        //Enemy count we determine by level and difficulty
+        int easyBase = 7 + (currentLevel - 1) * 2; // base enemies are - level 1: 7, Level 2: 9, Level 3: 11
+        int adjustment = 0;
+        if (difficulty == Difficulty.NORMAL) {
+            adjustment = 2;
+        } else if (difficulty == Difficulty.HARD) {
+            adjustment = 4;
+        }
+        int enemyCount = easyBase +adjustment;
+
+
+        int zombieDamage;
+        switch (difficulty) {
+            case EASY:
+                zombieDamage = 5;
+                break;
+            case NORMAL:
+                zombieDamage =10;
+                break;
+            case HARD:
+                zombieDamage = 20;
+                break;
+            default:
+                zombieDamage = 10;
+        }
+
+
+        // Spawn enemies
+        Random rand = new Random();
+        for (int i = 0; i < enemyCount; i++) {
+            if (walkableTiles.isEmpty()) break;
+            int index = rand.nextInt(walkableTiles.size());
+            int[] tile = walkableTiles.get(index);
+            double ex = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
+            double ey = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
+            enemies.add(new Enemy(ex, ey, "", gameMap, TILE_SIZE, zombieDamage));
+        }
+
+        int healthItemCount;
+        if (difficulty == Difficulty.EASY){
+            healthItemCount = 6;
+        }else if (difficulty == Difficulty.NORMAL){
+            healthItemCount = 4;
+        }else{ // HARD
+            healthItemCount = 2;
+        }
+
+        // Spawn health items
+        List<int[]> availableTiles = new ArrayList<>(walkableTiles);
+        for (int i = 0; i < healthItemCount && !availableTiles.isEmpty(); i++) {
+            int index = rand.nextInt(availableTiles.size());
+            int[] tile = availableTiles.remove(index);
+            double hx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
+            double hy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
+            healthItems.add(new HealthItem(hx, hy, gameAsset.getHealthItemSprite()));
+        }
+
+        int rifleDamage;
+        int shotgunDamage;
+        switch (difficulty) {
+            case EASY:
+                rifleDamage = 20;
+                shotgunDamage = 30;
+                break;
+            case NORMAL:
+                rifleDamage = 15;
+                shotgunDamage = 25;
+                break;
+            case HARD:
+                rifleDamage = 10;
+                shotgunDamage = 20;
+                break;
+            default:
+                rifleDamage = 15;
+                shotgunDamage = 25;
+        }
+
+
+        // Spawn Laser Rifle
+        if (!availableTiles.isEmpty()) {
+            int index = rand.nextInt(availableTiles.size());
+            int[] tile = availableTiles.remove(index);
+            double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
+            double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
+            Weapon lazerRifle = new Weapon("Laser Rifle", rifleDamage, 10, 30, 90, false, lazerRifleSprite, soundLazer2);
+            weaponItems.add(new WeaponItem(wx, wy, lazerRiflePickup, lazerRifle));
+        }
+
+        // SpawnShotgun
+        if (!availableTiles.isEmpty()) {
+            int index = rand.nextInt(availableTiles.size());
+            int[] tile = availableTiles.remove(index);
+            double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
+            double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
+            Weapon lazerShotgun = new Weapon("Laser Shotgun", shotgunDamage, 2, 8, 24, false, lazerShotgunSprite, soundLazer3);
+            weaponItems.add(new WeaponItem(wx, wy, lazerShotgunPickup, lazerShotgun));
+        }
+    }
+
+    private List<Weapon> createInitialWeapons() {
+        int pistolDamage;
+        switch (difficulty) {
+            case EASY:
+                pistolDamage = 15;
+                break;
+            case NORMAL:
+                pistolDamage = 10;
+                break;
+            case HARD:
+                pistolDamage = 5;
+                break;
+            default:
+                pistolDamage = 10;
+        }
+        Image laserPistolSprite = gameAsset.getLazerPistol();
+        AudioClip laserPistolSound = soundLazer1;
+        Weapon laserPistol = new Weapon("Laser Pistol", pistolDamage, 5, 10, 0, true, laserPistolSprite, laserPistolSound);
+        List<Weapon> weapons = new ArrayList<>();
+        weapons.add(laserPistol);
+        return weapons;
     }
 
     private void advanceLevel(){
@@ -842,5 +1005,6 @@ public class Main extends GameEngine
             System.exit(1);
         }
 
+        spawnLevelEntities();
     }
 }

@@ -41,7 +41,7 @@ public class Enemy extends Entity
     private double cooldownTimer = 0;
     private double deathTimer;
     private double hangAroundTime = 5;
-
+    private int damage;
     //Health
     private int maxHealth = 100;
     private int currentHealth = maxHealth;
@@ -50,13 +50,13 @@ public class Enemy extends Entity
     Composite orig ;
 
 
-    public Enemy(double x, double y, String enemyType, GameMap map, int mapS)
+    public Enemy(double x, double y, String enemyType, GameMap map, int mapS, int damage)
     {
         super(x, y);
         this.enemyType = enemyType;
         this.map = map;
         this.mapS = mapS;
-
+        this.damage = damage;
         this.ai = new EnemyAI(map, mapS);
         this.spriteSheet = GameEngine.loadImage("assets/visual/StormZombieSpritesheet.png");
         this.hitSheet = GameEngine.loadImage("assets/visual/StormZombieSpritesheetRedTint.png");
@@ -197,7 +197,7 @@ public class Enemy extends Entity
             double stopDistance = 30;
 
             if (dist <= stopDistance && cooldownTimer <= 0) {
-                player.takeDamage(10); // Deal 10 damage
+                player.takeDamage(damage); // will change with difficulty level now
                 currentFrame = 1;
                 // Play the injured sound
                 Main main = (Main) engine;

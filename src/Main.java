@@ -25,7 +25,6 @@ enum Difficulty {
 
 enum GraphicsQuality {
     LOW,
-    MEDIUM,
     HIGH
 }
 
@@ -44,7 +43,7 @@ public class Main extends GameEngine
     private boolean isAtEndTile;
     private int currentLevel;
     private Difficulty difficulty = Difficulty.NORMAL;
-    private GraphicsQuality quality =  GraphicsQuality.MEDIUM;
+    private GraphicsQuality quality =  GraphicsQuality.LOW;
     // Window size
     private int width = 1024;
     private int height = 512;
@@ -89,7 +88,7 @@ public class Main extends GameEngine
     private Image gameOverBackground;
     private Button backButton;
     private List<Button> settingsButtons = new ArrayList<>();
-    private Button easyButton, normalButton, hardButton, highButton, mediumButton, lowButton;
+    private Button easyButton, normalButton, hardButton, highButton, lowButton;
 
 
     private class Button{
@@ -194,21 +193,15 @@ public class Main extends GameEngine
             difficulty = Difficulty.HARD;
             updateDifficultyButtons();
         });
-        highButton = new Button((startX /2) * 3, startY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "High" , () -> {
+        highButton = new Button((startX /2) * 3, startY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "High" , () -> {
             quality = GraphicsQuality.HIGH;
             updateGraphicsQuality();
-            raycaster.setNumRays(1024);
-        });
-        mediumButton = new Button((startX /2) * 3, startY + (buttonHeight + buttonSpacing), buttonWidth, buttonHeight, "Medium" , () -> {
-            quality = GraphicsQuality.MEDIUM;
-            updateGraphicsQuality();
-            raycaster.setNumRays(512);
-
+            raycaster.setNumRays(1048);
         });
         lowButton = new Button((startX /2) * 3, startY, buttonWidth, buttonHeight, "Low" , () -> {
             quality = GraphicsQuality.LOW;
             updateGraphicsQuality();
-            raycaster.setNumRays(256);
+            raycaster.setNumRays(512);
         });
 
 
@@ -216,7 +209,6 @@ public class Main extends GameEngine
         settingsButtons.add(normalButton);
         settingsButtons.add(hardButton);
         settingsButtons.add(lowButton);
-        settingsButtons.add(mediumButton);
         settingsButtons.add(highButton);
         updateDifficultyButtons();
         updateGraphicsQuality();
@@ -562,11 +554,11 @@ public class Main extends GameEngine
         int startY = 100;
         drawCenteredText(startY, lines[0], "Arial", 20, Font.PLAIN);
         for(int i = 1; i < lines.length; i++) {
-                drawText(this.mWidth / 8,  startY + i * lineHeight, lines[i], "Arial", 20);
+                drawText((double) this.mWidth / 8,  startY + i * lineHeight, lines[i], "Arial", 20);
         }
-        drawText(this.mWidth/ 4 * 2, startY + 3 * lineHeight, "Press F at the doors like below:", "Arial", 20);
-        drawImage(subImage(loadImage("assets/visual/ScifiWall.png"), 512, 0, 128, 128), this.mWidth / 4 * 2, startY + 4 * lineHeight);
-        drawText(this.mWidth/ 4 * 2, startY + 5 * lineHeight + 128, "To advance to the next level", "Arial", 20);
+        drawText((double) this.mWidth / 4 * 2, startY + 3 * lineHeight, "Press F at the doors like below:", "Arial", 20);
+        drawImage(subImage(loadImage("assets/visual/ScifiWall.png"), 512, 0, 128, 128), (double) this.mWidth / 4 * 2, startY + 4 * lineHeight);
+        drawText((double) this.mWidth / 4 * 2, startY + 5 * lineHeight + 128, "To advance to the next level", "Arial", 20);
         backButton.draw();
     }
 
@@ -614,7 +606,6 @@ public class Main extends GameEngine
     }
     private void updateGraphicsQuality  () {
         highButton.selected = (quality == GraphicsQuality.HIGH);
-        mediumButton.selected = (quality == GraphicsQuality.MEDIUM);
         lowButton.selected = (quality == GraphicsQuality.LOW);
     }
 

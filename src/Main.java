@@ -560,9 +560,13 @@ public class Main extends GameEngine
         };
         int lineHeight = 30;
         int startY = 100;
-        for(int i = 0; i < lines.length; i++) {
-                drawCenteredText(startY + i * lineHeight, lines[i], "Arial", 20, Font.PLAIN);
+        drawCenteredText(startY, lines[0], "Arial", 20, Font.PLAIN);
+        for(int i = 1; i < lines.length; i++) {
+                drawText(this.mWidth / 8,  startY + i * lineHeight, lines[i], "Arial", 20);
         }
+        drawText(this.mWidth/ 4 * 2, startY + 3 * lineHeight, "Press F at the doors like below:", "Arial", 20);
+        drawImage(subImage(loadImage("assets/visual/ScifiWall.png"), 512, 0, 128, 128), this.mWidth / 4 * 2, startY + 4 * lineHeight);
+        drawText(this.mWidth/ 4 * 2, startY + 5 * lineHeight + 128, "To advance to the next level", "Arial", 20);
         backButton.draw();
     }
 

@@ -57,8 +57,6 @@ public class Enemy extends Entity
         this.ai = new EnemyAI(map, mapS);
         this.spriteSheet = GameEngine.loadImage("assets/visual/StormZombieSpritesheet.png");
         this.hitSheet = GameEngine.loadImage("assets/visual/StormZombieSpritesheetRedTint.png");
-        // Updated frame size for new spritesheet dimensions: 683 x 1024 (TODO: Change back once we get final
-        // spritesheets)
         this.frameWidth = 432 / 6;   // 683 / 6 columns (approximate)
         this.frameHeight = 576 / 8;  // Updated: 9 rows instead of 8
         animations = new Image[5][]; // IDLE, ALERTED, CHASING, ATTACKING, DEAD
@@ -508,8 +506,13 @@ public class Enemy extends Entity
     // -----------------------------------------
     // ----------- Place on minimap ------------
     // -----------------------------------------
-    public void drawOnMinimap(GameEngine g)
+    public void drawOnMinimap(GameEngine g, Player p)
     {
+        double dx = (x / mapS) - (p.getX() / mapS);
+        double dy = (y / mapS) - (p.getY() / mapS);
+        double distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance > 5)
+            return;
         final int MINI_MAP_SIZE = 128;
         int miniTileSize = MINI_MAP_SIZE / map.getWidth();
 

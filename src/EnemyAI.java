@@ -109,7 +109,7 @@ public class EnemyAI
         }
     }
 
-    private boolean canSeePlayer(double ex, double ey, double px, double py)
+    public boolean canSeePlayer(double ex, double ey, double px, double py)
     {
         double dx = px - ex;
         double dy = py - ey;

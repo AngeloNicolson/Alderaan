@@ -379,7 +379,6 @@ public class Main extends GameEngine
             double verticalLookOffset = player.getVerticalLookOffset();
 
             raycaster.draw(this, playerX, playerY, playerAngle, verticalLookOffset);
-            player.draw(this);
 
             // --- MINIMAP OVERLAY ---
             final int MINI_MAP_SIZE = 128;
@@ -515,8 +514,10 @@ public class Main extends GameEngine
 
             for (Enemy enemy : enemies)
             {
-                enemy.drawOnMinimap(this);
+                enemy.drawOnMinimap(this, player);
             }
+            // Leave here so crosshair is drawn over everything
+            player.draw(this);
         }
         else if (currentState == GameState.GAME_OVER)
         {

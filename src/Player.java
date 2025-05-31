@@ -141,23 +141,27 @@ public class Player extends Entity
 
     public void draw(GameEngine engine)
     {
+        // TODO: Silencing this for now. I doubt we will need it again. but will wait before deleting
+        //  double lineLength = 7;
+        //   Calculate the end point of the direction line based on player's angle
+        //   double endX = x + Math.cos(angle) * lineLength;
+        //   double endY = y + Math.sin(angle) * lineLength;
+        // engine.drawLine(x, y, endX, endY);
 
-        double lineLength = 20;
-        // Calculate the end point of the direction line based on player's angle
-        double endX = x + Math.cos(angle) * lineLength;
-        double endY = y + Math.sin(angle) * lineLength;
-
-        // Draw direction line from player's center
-        engine.drawLine(x, y, endX, endY);
-
-        // Draw crosshair
+        // Draw crosshair with gap in the center
         engine.changeColor(engine.white);
         int centerX = engine.width() / 2;
         int centerY = engine.height() / 2;
-        int crosshairSize = 10; // Adjust the size as needed
+        int crosshairLength = 7; // length of each arm
+        int gapSize = 4;         // size of the crosshair gap
 
-        engine.drawLine(centerX - crosshairSize, centerY, centerX + crosshairSize, centerY);
-        engine.drawLine(centerX, centerY - crosshairSize, centerX, centerY + crosshairSize);
+        // Horizontal lines (left and right of center)
+        engine.drawLine(centerX - gapSize - crosshairLength, centerY, centerX - gapSize, centerY);
+        engine.drawLine(centerX + gapSize, centerY, centerX + gapSize + crosshairLength, centerY);
+
+        // Vertical lines (above and below center)
+        engine.drawLine(centerX, centerY - gapSize - crosshairLength, centerX, centerY - gapSize);
+        engine.drawLine(centerX, centerY + gapSize, centerX, centerY + gapSize + crosshairLength);
     }
 
     private boolean isWall(double px, double py)

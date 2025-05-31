@@ -16,6 +16,7 @@ enum GameState
     SETTINGS,
     PLAYING,
     GAME_OVER,
+    BETWEENLEVELS
 }
 
 enum Difficulty
@@ -91,8 +92,10 @@ public class Main extends GameEngine
     private Button backButton;
     private final List<Button> settingsButtons = new ArrayList<>();
     private Button easyButton, normalButton, hardButton, highButton, lowButton;
-    private boolean gameStarted;
+    private boolean gameStarted = false;
     private Button resumeButton;
+    private double betweenTimer = 0;
+    private double betweenLength = 2;
 
     private class Button
     {
@@ -168,7 +171,6 @@ public class Main extends GameEngine
 
     @Override public void init()
     {
-        gameStarted = false;
         currentState = GameState.MAIN_MENU;
         menuBackground = loadImage("assets/visual/menuWallpaper.png");
         gameOverBackground = loadImage("assets/visual/gameOverScreen.png");
@@ -269,6 +271,13 @@ public class Main extends GameEngine
 
     @Override public void update(double dt)
     {
+        if (currentState == GameState.BETWEENLEVELS) {
+            betweenTimer += dt;
+            if (betweenTimer > betweenLength) {
+                betweenTimer = 0;
+                currentState = GameState.PLAYING;
+            }
+        }
         // Update Enemies
         if (currentState == GameState.PLAYING)
         {
@@ -337,6 +346,15 @@ public class Main extends GameEngine
 
     @Override public void paintComponent()
     {
+        if(currentState == GameState.BETWEENLEVELS) {
+            getFrame().setCursor(defaultCursor);
+            saveCurrentTransform();
+            changeBackgroundColor(black);
+            clearBackground(width, height);
+            changeColor(white);
+            drawCenteredText( height / 2, "Level: " + currentLevel, "Arial", 40, Font.BOLD);
+            restoreLastTransform();
+        }
         if (currentState == GameState.MAIN_MENU)
         {
             getFrame().setCursor(defaultCursor);
@@ -674,6 +692,7 @@ public class Main extends GameEngine
             case KeyEvent.VK_F:
                 if (isAtEndTile)
                 {
+                    playAudio(soundWinDoorOpen);
                     advanceLevel();
                     isAtEndTile = false;
                     resetPlayer();
@@ -888,16 +907,16 @@ public class Main extends GameEngine
 
     private void startNewGame()
     {
+        gameStarted = true;
         currentLevel = 0;
         advanceLevel();
+
         List<Weapon> initialWeapons = createInitialWeapons();
         initializePlayer(initialWeapons);
-        currentState = GameState.PLAYING;
         left = false;
         right = false;
         up = false;
         down = false;
-        gameStarted = true;
     }
 
     private void resetPlayer()
@@ -1069,6 +1088,10 @@ public class Main extends GameEngine
                 new Weapon("Laser Shotgun", shotgunDamage, 2, 8, 24, false, lazerShotgunSprite, soundLazer3, loadImage("assets/visual/LazerShotGunFlare.png"), 4);
             weaponItems.add(new WeaponItem(wx, wy, lazerShotgunPickup, lazerShotgun));
         }
+        left = false;
+        right = false;
+        up = false;
+        down = false;
     }
 
     private List<Weapon> createInitialWeapons()
@@ -1099,6 +1122,9 @@ public class Main extends GameEngine
     private void advanceLevel()
     {
         String mapFileName = "maps/Level01.txt";
+        if (gameStarted) {
+            currentState = GameState.BETWEENLEVELS;
+        }
 
         currentLevel++; // advance to the next level
 

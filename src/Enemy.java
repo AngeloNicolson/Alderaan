@@ -69,7 +69,6 @@ public class Enemy extends Entity
         animations = new Image[5][]; // IDLE, ALERTED, CHASING, ATTACKING, DEAD
         hitAnimations = new Image[4][];
         distanceAnimations = new Image[5][];
-        orig = null;
 
         // IDLE row 7 has 5 columns (directions)
         hitAnimations[0] = new Image[5];

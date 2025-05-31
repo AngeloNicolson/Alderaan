@@ -108,6 +108,7 @@ public class Main extends GameEngine
     private double betweenTimer;
     private double betweenLength;
     private boolean displayEnd;
+    private double escapePodX, escapePodY;
 
     private class Button
     {
@@ -257,7 +258,7 @@ public class Main extends GameEngine
 
         // initialise the game map
         gameMap = new GameMap();
-        numOfLevels = 1;
+        numOfLevels = 3;
         currentLevel = 0; // start at 0, and will auto increment to level 1
         advanceLevel(); // sets up map
         isAtEndTile = false;
@@ -285,9 +286,7 @@ public class Main extends GameEngine
         lastMouseY = height / 2;
 
         // initialise animation var
-        betweenTimer = 0;
-        betweenLength = 2;
-        displayEnd = false;
+        resetAnimation();
     }
 
     @Override public void update(double dt)
@@ -298,6 +297,7 @@ public class Main extends GameEngine
                 betweenTimer = 0;
                 displayEnd = true;
             }
+            escapePodY += 15 * dt;
         }
         if (currentState == GameState.BETWEENLEVELS) {
             betweenTimer += dt;
@@ -380,6 +380,7 @@ public class Main extends GameEngine
             changeBackgroundColor(black);
             clearBackground(width, height);
             drawImage(menuBackground, 0, 0, width, height);
+            drawImage(gameAsset.getEscapePodSprite(), escapePodX, escapePodY, 3, -5); // draw the escape pod
             changeColor(white);
             drawCenteredText( 100, "You have successfully escaped.", "Arial", 40, Font.BOLD);
             drawCenteredText( height-50, "Press ENTER to return to main menu.", "Arial", 14,Font.PLAIN);
@@ -764,7 +765,7 @@ public class Main extends GameEngine
         else if (currentState == GameState.VICTORY) {
             if (e.getKeyCode() == KeyEvent.VK_ENTER)
             {
-                displayEnd = false;
+                resetAnimation();
                 gameStarted = false;
                 currentState = GameState.MAIN_MENU;
             }
@@ -1222,5 +1223,13 @@ public class Main extends GameEngine
         }
 
         spawnLevelEntities();
+    }
+
+    public void resetAnimation(){
+        betweenTimer = 0;
+        betweenLength = 1;
+        displayEnd = false;
+        escapePodX = width-100;
+        escapePodY = 150;
     }
 }

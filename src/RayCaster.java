@@ -146,8 +146,8 @@ public class RayCaster
         // Cast all rays before drawing
         castRays(px, py, playerAngle);
 
-        ge.drawSolidRectangle(0, 0, ge.width(), ge.height() / 2);               // Ceiling
-        ge.drawSolidRectangle(0, ge.height() / 2, ge.width(), ge.height() / 2); // Floor
+        //ge.drawSolidRectangle(0, 0, ge.width(), ge.height() / 2);               // Ceiling
+        //ge.drawSolidRectangle(0, ge.height() / 2, ge.width(), ge.height() / 2); // Floor
 
         double stripWidth = (double)ge.width() / numRays;
 

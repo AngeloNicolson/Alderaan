@@ -13,6 +13,7 @@ public class GameAsset
     private Image lazerShotgun;
     private Image lazerShotgunPickup;
     private Image healthItemSprite;
+    private Image escapePodSprite;
 
     // constructor
     public GameAsset()
@@ -34,6 +35,7 @@ public class GameAsset
         lazerShotgunPickup = GameEngine.loadImage("assets/visual/LazerShotGunSide.png");
         lazerShotgun = GameEngine.loadImage("assets/visual/LazerShotGun.png");
         healthItemSprite = GameEngine.loadImage("assets/visual/HealthPack.png");
+        escapePodSprite = GameEngine.loadImage("assets/visual/shell.png");
     }
 
     // get one strip of the wall texture based on the width value
@@ -77,5 +79,8 @@ public class GameAsset
     public Image getHealthItemSprite()
     {
         return healthItemSprite;
+    }
+    public Image getEscapePodSprite() {
+        return escapePodSprite;
     }
 }

@@ -91,6 +91,8 @@ public class Main extends GameEngine
     private Button backButton;
     private final List<Button> settingsButtons = new ArrayList<>();
     private Button easyButton, normalButton, hardButton, highButton, lowButton;
+    private boolean gameStarted;
+    private Button resumeButton;
 
     private class Button
     {
@@ -166,6 +168,7 @@ public class Main extends GameEngine
 
     @Override public void init()
     {
+        gameStarted = false;
         currentState = GameState.MAIN_MENU;
         menuBackground = loadImage("assets/visual/menuWallpaper.png");
         gameOverBackground = loadImage("assets/visual/gameOverScreen.png");
@@ -173,15 +176,19 @@ public class Main extends GameEngine
         int buttonHeight = 50;
         int buttonSpacing = 20;
         int startX = (width - buttonWidth) / 2;
-        int startY = (height - (buttonHeight + 3 * buttonSpacing)) / 2;
+        int startY = (height - (buttonHeight + 3 * buttonSpacing)) / 3;
 
-        menuButtons.add(new Button(startX, startY, buttonWidth, buttonHeight, "Start Game", () -> { startNewGame(); }));
+        resumeButton = new Button(startX, startY, buttonWidth, buttonHeight, "Resume Game", () -> {
+            currentState = GameState.PLAYING;
+        });
 
-        menuButtons.add(new Button(startX, startY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight,
-                                   "How to Play", () -> { currentState = GameState.HOW_TO_PLAY; }));
+        menuButtons.add(new Button(startX, startY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight, "Start Game", () -> { startNewGame(); }));
+
         menuButtons.add(new Button(startX, startY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight,
-                                   "Settings", () -> { currentState = GameState.SETTINGS; }));
+                                   "How to Play", () -> { currentState = GameState.HOW_TO_PLAY; }));
         menuButtons.add(new Button(startX, startY + 3 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight,
+                                   "Settings", () -> { currentState = GameState.SETTINGS; }));
+        menuButtons.add(new Button(startX, startY + 4 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight,
                                    "Credits", () -> { currentState = GameState.CREDITS; }));
 
         easyButton = new Button(startX / 2, startY, buttonWidth, buttonHeight, "Easy", () -> {
@@ -554,6 +561,9 @@ public class Main extends GameEngine
         y = 100;
         changeColor(new Color(200, 200, 200)); // Light gray
         mGraphics.drawString(subtitle, x, y);
+        if (gameStarted) {
+            resumeButton.draw();
+        }
         for (Button button : menuButtons)
         {
             button.draw();
@@ -566,8 +576,8 @@ public class Main extends GameEngine
         drawCenteredText(60, "How to Play", "Arial", 40, Font.BOLD);
         String[] lines = {"You need to get to a life pod, and get off this ship.",
                           " ",
-                          " ",
                           "Controls:",
+                          "ESC: Back to menu",
                           "WASD: Move",
                           "Mouse: Look around",
                           "Left Click: Shoot",
@@ -640,6 +650,9 @@ public class Main extends GameEngine
         {
             switch (e.getKeyCode())
             {
+                case KeyEvent.VK_ESCAPE:
+                    currentState = GameState.MAIN_MENU;
+                    break;
             case KeyEvent.VK_Q:
                 if (!qPressed)
                 {
@@ -763,6 +776,12 @@ public class Main extends GameEngine
         {
             int mx = e.getX();
             int my = e.getY();
+            if (gameStarted) {
+                if (resumeButton.contains(mx, my)) {
+                    resumeButton.action.run();
+                    return;
+                }
+            }
             for (Button button : menuButtons)
             {
                 if (button.contains(mx, my))
@@ -878,6 +897,7 @@ public class Main extends GameEngine
         right = false;
         up = false;
         down = false;
+        gameStarted = true;
     }
 
     private void resetPlayer()

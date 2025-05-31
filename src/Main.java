@@ -16,7 +16,8 @@ enum GameState
     SETTINGS,
     PLAYING,
     GAME_OVER,
-    BETWEENLEVELS
+    BETWEENLEVELS,
+    VICTORY
 }
 
 enum Difficulty
@@ -34,6 +35,7 @@ enum GraphicsQuality
 
 public class Main extends GameEngine
 {
+    // Game state related variables
     public static final int TILE_SIZE = 32;
     private GameMap gameMap;
     private Player player;
@@ -44,9 +46,11 @@ public class Main extends GameEngine
     private GameAsset gameAsset;
     private GameState currentState;
     private boolean isAtEndTile;
+    private int numOfLevels;
     private int currentLevel;
     private Difficulty difficulty = Difficulty.NORMAL;
     private GraphicsQuality quality = GraphicsQuality.LOW;
+
     // Window size
     private int width = 1024;
     private int height = 512;
@@ -64,9 +68,7 @@ public class Main extends GameEngine
     private boolean qPressed = false;
     private boolean ePressed = false;
 
-    private double weaponX = 400;
-    private double weaponY = 300;
-    private List<Weapon> initialWeapons;
+    // Audio Clips
     private static final AudioClip soundLazer1 = loadAudio("assets/audio/SoundLazer1.wav");
     private static final AudioClip soundLazer2 = loadAudio("assets/audio/SoundLazer2.wav");
     private static final AudioClip soundLazer3 = loadAudio("assets/audio/SoundLazer3.wav");
@@ -80,10 +82,17 @@ public class Main extends GameEngine
     private static final AudioClip soundZombieDeath = loadAudio("assets/audio/SoundZombieDeath.wav");
     private static final AudioClip soundZombieNeutral = loadAudio("assets/audio/SoundZombieNeutral.wav");
     private static final AudioClip soundPickupItem = loadAudio("assets/audio/SoundPickupItem.wav");
+    
+    // Gameplay related variables
+    private double weaponX = 400;
+    private double weaponY = 300;
+    private List<Weapon> initialWeapons;
     private Image lazerRifleSprite;
     private Image lazerShotgunSprite;
     private Image lazerRiflePickup;
     private Image lazerShotgunPickup;
+
+    // Menu related variables
     private Image menuBackground;
     private List<Button> menuButtons = new ArrayList<>();
     private Cursor blankCursor;
@@ -94,8 +103,11 @@ public class Main extends GameEngine
     private Button easyButton, normalButton, hardButton, highButton, lowButton;
     private boolean gameStarted = false;
     private Button resumeButton;
-    private double betweenTimer = 0;
-    private double betweenLength = 2;
+
+    // Animation related variables
+    private double betweenTimer;
+    private double betweenLength;
+    private boolean displayEnd;
 
     private class Button
     {
@@ -171,7 +183,10 @@ public class Main extends GameEngine
 
     @Override public void init()
     {
+        //Initialise gameAssets to hold all visual game assets
         this.gameAsset = new GameAsset();
+
+        //initialise game menu
         currentState = GameState.MAIN_MENU;
         menuBackground = loadImage("assets/visual/menuWallpaper.png");
         gameOverBackground = loadImage("assets/visual/gameOverScreen.png");
@@ -185,7 +200,7 @@ public class Main extends GameEngine
             currentState = GameState.PLAYING;
         });
 
-        menuButtons.add(new Button(startX, startY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight, "Start Game", () -> { startNewGame(); }));
+        menuButtons.add(new Button(startX, startY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight, "Start New Game", () -> { startNewGame(); }));
 
         menuButtons.add(new Button(startX, startY + 2 * (buttonHeight + buttonSpacing), buttonWidth, buttonHeight,
                                    "How to Play", () -> { currentState = GameState.HOW_TO_PLAY; }));
@@ -242,7 +257,10 @@ public class Main extends GameEngine
 
         // initialise the game map
         gameMap = new GameMap();
+        numOfLevels = 1;
         currentLevel = 0; // start at 0, and will auto increment to level 1
+        advanceLevel(); // sets up map
+        isAtEndTile = false;
 
         setWindowSize(width, height);
 
@@ -252,9 +270,6 @@ public class Main extends GameEngine
         lazerShotgunSprite = gameAsset.getLazerShotgun();
         lazerRiflePickup = gameAsset.getLazerRiflePickup();
         lazerShotgunPickup = gameAsset.getLazerShotgunPickup();
-
-        advanceLevel(); // sets up map
-        isAtEndTile = false;
 
         // Initialize Robot for mouse control
         try
@@ -268,10 +283,22 @@ public class Main extends GameEngine
 
         lastMouseX = width / 2;
         lastMouseY = height / 2;
+
+        // initialise animation var
+        betweenTimer = 0;
+        betweenLength = 2;
+        displayEnd = false;
     }
 
     @Override public void update(double dt)
     {
+        if (currentState == GameState.VICTORY) {
+            betweenTimer += dt;
+            if (betweenTimer > betweenLength+2) {
+                betweenTimer = 0;
+                displayEnd = true;
+            }
+        }
         if (currentState == GameState.BETWEENLEVELS) {
             betweenTimer += dt;
             if (betweenTimer > betweenLength) {
@@ -347,7 +374,21 @@ public class Main extends GameEngine
 
     @Override public void paintComponent()
     {
-        if(currentState == GameState.BETWEENLEVELS) {
+        if (currentState == GameState.VICTORY) {
+            getFrame().setCursor(defaultCursor);
+            saveCurrentTransform();
+            changeBackgroundColor(black);
+            clearBackground(width, height);
+            drawImage(menuBackground, 0, 0, width, height);
+            changeColor(white);
+            drawCenteredText( 100, "You have successfully escaped.", "Arial", 40, Font.BOLD);
+            drawCenteredText( height-50, "Press ENTER to return to main menu.", "Arial", 14,Font.PLAIN);
+            if (displayEnd) {
+                drawCenteredText( 150, "Then you look to the nasty looking gash on your arm...", "Arial", 20, Font.BOLD);
+            }
+            restoreLastTransform();
+        }
+        else if(currentState == GameState.BETWEENLEVELS) {
             getFrame().setCursor(defaultCursor);
             saveCurrentTransform();
             changeBackgroundColor(black);
@@ -356,7 +397,7 @@ public class Main extends GameEngine
             drawCenteredText( height / 2, "Level: " + currentLevel, "Arial", 40, Font.BOLD);
             restoreLastTransform();
         }
-        if (currentState == GameState.MAIN_MENU)
+        else if (currentState == GameState.MAIN_MENU)
         {
             getFrame().setCursor(defaultCursor);
             drawMainMenu();
@@ -702,7 +743,7 @@ public class Main extends GameEngine
             case KeyEvent.VK_F:
                 if (isAtEndTile)
                 {
-                    playAudio(soundWinDoorOpen);
+                    
                     advanceLevel();
                     isAtEndTile = false;
                     resetPlayer();
@@ -718,6 +759,14 @@ public class Main extends GameEngine
             if (e.getKeyCode() == KeyEvent.VK_ENTER)
             {
                 restartGame();
+            }
+        }
+        else if (currentState == GameState.VICTORY) {
+            if (e.getKeyCode() == KeyEvent.VK_ENTER)
+            {
+                displayEnd = false;
+                gameStarted = false;
+                currentState = GameState.MAIN_MENU;
             }
         }
     }
@@ -1131,12 +1180,21 @@ public class Main extends GameEngine
 
     private void advanceLevel()
     {
-        String mapFileName = "maps/Level01.txt";
-        if (gameStarted) {
-            currentState = GameState.BETWEENLEVELS;
+        currentLevel++; // advance to the next level
+        
+        //if the current level is more than then number of levels, then player has won
+        if(gameStarted && currentLevel > numOfLevels){
+            currentState = GameState.VICTORY;
+            playAudio(soundWinLaunch);
+            //doesn't return immediately and continues to load the map into gameMap, this is to prevent any errors
         }
 
-        currentLevel++; // advance to the next level
+        if (gameStarted && currentLevel <= numOfLevels) {
+            currentState = GameState.BETWEENLEVELS;
+            playAudio(soundWinDoorOpen);
+        }
+
+        String mapFileName = "maps/Level01.txt";
 
         switch (currentLevel)
         {
@@ -1150,7 +1208,7 @@ public class Main extends GameEngine
             mapFileName = "maps/Level03.txt";
             break;
         case 4:
-            System.out.println("WIN WIN WIN");
+            //System.out.println("WIN WIN WIN");
             break;
         default:
             mapFileName = "maps/Level01.txt";

@@ -2,26 +2,25 @@ import java.awt.*;
 
 public class Weapon
 {
-    private String name;
-    private int damage;
-    private int fireRate;
-    private int magSize;
+    private final String name;
+    private final int damage;
+    private final int fireRate;
+    private final int magSize;
     private int currentMag;
     private static final int MAX_AMMO = 999;
     private int totalAmmo;
-    private boolean isUnlimitedAmmo;
+    private final boolean isUnlimitedAmmo;
     private boolean fired;
     private double fireCooldown = 0.0;
-    private double flashLength = 0.5;
     private double flashTime = 0.0;
-    private Image sprite;
-    private Image[] muzzleFlash;
+    private final Image sprite;
+    private final Image[] muzzleFlash;
     private int flashFrame;
-    private int flashFrames;
-    private GameEngine.AudioClip fireSound;
+    private final int flashFrames;
+    private final GameEngine.AudioClip fireSound;
 
     public Weapon(String name, int damage, int fireRate, int magSize, int initialTotalAmmo, boolean isUnlimitedAmmo,
-                  Image sprite, GameEngine.AudioClip fireSound, Image fsprite, int fFrames)
+                  Image sprite, GameEngine.AudioClip fireSound, Image fSprite, int fFrames)
     {
         this.name = name;
         this.damage = damage;
@@ -31,7 +30,7 @@ public class Weapon
         if (isUnlimitedAmmo)
         {
             this.currentMag = magSize;
-            this.totalAmmo = -1; // Inidicate it is unlimited
+            this.totalAmmo = -1; // Indicate it is unlimited
         }
         else
         {
@@ -42,7 +41,7 @@ public class Weapon
         this.flashFrames = fFrames;
         this.muzzleFlash = new Image[flashFrames];
         for (int i = 0; i < flashFrames; i ++) {
-            muzzleFlash[i] = GameEngine.subImage(fsprite,  128  * i, 0, 128, 128);
+            muzzleFlash[i] = GameEngine.subImage(fSprite,  128  * i, 0, 128, 128);
         }
         this.fireSound = fireSound;
     }
@@ -114,9 +113,6 @@ public class Weapon
     public int getDamage()
     {
         return damage;
-    }
-    public void setFired(boolean f) {
-        fired = f;
     }
 
     public Image getFlashFrame() {

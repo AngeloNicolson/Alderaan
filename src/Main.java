@@ -37,10 +37,10 @@ public class Main extends GameEngine
     private GameMap gameMap;
     private Player player;
     private RayCaster raycaster;
-    private List<Enemy> enemies = new ArrayList<>();
-    private List<HealthItem> healthItems = new ArrayList<>();
-    private List<WeaponItem> weaponItems = new ArrayList<>();
-    private GameAsset gameAsset;
+    private final List<Enemy> enemies = new ArrayList<>();
+    private final List<HealthItem> healthItems = new ArrayList<>();
+    private final List<WeaponItem> weaponItems = new ArrayList<>();
+    private static final GameAsset gameAsset = new GameAsset();
     private GameState currentState;
     private boolean isAtEndTile;
     private int currentLevel;
@@ -66,30 +66,30 @@ public class Main extends GameEngine
     private double weaponX = 400;
     private double weaponY = 300;
     private List<Weapon> initialWeapons;
-    private AudioClip soundLazer1;
-    private AudioClip soundLazer2;
-    private AudioClip soundLazer3;
-    private AudioClip soundLazerHit;
-    private AudioClip soundPlayerInjured;
-    private AudioClip soundPlayerWalking;
-    private AudioClip soundReloadRifle;
-    private AudioClip soundReloadShotgun;
-    private AudioClip soundWinDoorOpen;
-    private AudioClip soundWinLaunch;
-    private AudioClip soundZombieDeath;
-    private AudioClip soundZombieNeutral;
-    private AudioClip soundPickupItem;
+    private static final AudioClip soundLazer1 = loadAudio("assets/audio/SoundLazer1.wav");
+    private static final AudioClip soundLazer2 = loadAudio("assets/audio/SoundLazer2.wav");
+    private static final AudioClip soundLazer3 = loadAudio("assets/audio/SoundLazer3.wav");
+    private static final AudioClip soundLazerHit = loadAudio("assets/audio/SoundLazerHit.wav");
+    private static final AudioClip soundPlayerInjured = loadAudio("assets/audio/SoundPlayerInjured.wav");
+    private static final AudioClip soundPlayerWalking = loadAudio("assets/audio/SoundPlayerWalking.wav");
+    private static final AudioClip soundReloadRifle = loadAudio("assets/audio/SoundReloadRifle.wav");
+    private static final AudioClip soundReloadShotgun = loadAudio("assets/audio/SoundReloadShotgun.wav");
+    private static final AudioClip soundWinDoorOpen = loadAudio("assets/audio/SoundWinDoorOpen.wav");
+    private static final AudioClip soundWinLaunch = loadAudio("assets/audio/SoundWinLaunch.wav");
+    private static final AudioClip soundZombieDeath = loadAudio("assets/audio/SoundZombieDeath.wav");
+    private static final AudioClip soundZombieNeutral = loadAudio("assets/audio/SoundZombieNeutral.wav");
+    private static final AudioClip soundPickupItem = loadAudio("assets/audio/SoundPickupItem.wav");
     private Image lazerRifleSprite;
     private Image lazerShotgunSprite;
     private Image lazerRiflePickup;
     private Image lazerShotgunPickup;
     private Image menuBackground;
-    private List<Button> menuButtons = new ArrayList<>();
+    private final List<Button> menuButtons = new ArrayList<>();
     private Cursor blankCursor;
     private Cursor defaultCursor;
     private Image gameOverBackground;
     private Button backButton;
-    private List<Button> settingsButtons = new ArrayList<>();
+    private final List<Button> settingsButtons = new ArrayList<>();
     private Button easyButton, normalButton, hardButton, highButton, lowButton;
 
     private class Button
@@ -236,22 +236,7 @@ public class Main extends GameEngine
 
         setWindowSize(width, height);
 
-        soundLazer1 = loadAudio("assets/audio/SoundLazer1.wav");
-        soundLazer2 = loadAudio("assets/audio/SoundLazer2.wav");
-        soundLazer3 = loadAudio("assets/audio/SoundLazer3.wav");
-        soundLazerHit = loadAudio("assets/audio/SoundLazerHit.wav");
-        soundPlayerInjured = loadAudio("assets/audio/SoundPlayerInjured.wav");
-        soundPlayerWalking = loadAudio("assets/audio/SoundPlayerWalking.wav");
-        soundWinDoorOpen = loadAudio("assets/audio/SoundWinDoorOpen.wav");
-        soundWinLaunch = loadAudio("assets/audio/SoundWinLaunch.wav");
-        soundZombieDeath = loadAudio("assets/audio/SoundZombieDeath.wav");
-        soundZombieNeutral = loadAudio("assets/audio/SoundZombieNeutral.wav");
-        soundPickupItem = loadAudio("assets/audio/SoundPickupItem.wav");
-        soundReloadRifle = loadAudio("assets/audio/SoundReloadRifle.wav");
-        soundReloadShotgun = loadAudio("assets/audio/SoundReloadShotgun.wav");
-
         // Initialize ray caster and associated objects
-        gameAsset = new GameAsset();
         raycaster = new RayCaster(gameMap, TILE_SIZE, gameAsset);
         lazerRifleSprite = gameAsset.getLazerRifle();
         lazerShotgunSprite = gameAsset.getLazerShotgun();
@@ -1084,9 +1069,8 @@ public class Main extends GameEngine
             pistolDamage = 10;
         }
         Image laserPistolSprite = gameAsset.getLazerPistol();
-        AudioClip laserPistolSound = soundLazer1;
         Weapon laserPistol =
-            new Weapon("Laser Pistol", pistolDamage, 5, 10, 0, true, laserPistolSprite, laserPistolSound, loadImage("assets/visual/LazerPistolFlare.png"), 3);
+            new Weapon("Laser Pistol", pistolDamage, 5, 10, 0, true, laserPistolSprite, soundLazer1, loadImage("assets/visual/LazerPistolFlare.png"), 3);
         List<Weapon> weapons = new ArrayList<>();
         weapons.add(laserPistol);
         return weapons;

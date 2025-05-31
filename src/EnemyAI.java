@@ -10,18 +10,18 @@ public class EnemyAI
     }
 
     private AIState state = AIState.IDLE; // Initial state
-    private GameMap map;
-    private int tileSize;
-    private double alertRadius = 120;      // How far enemy notices noise
-    private double stopDistance = 30;      // Stops right near player
-    private double maxChaseDistance = 110; // Gives up if player flees too far
+    private static GameMap map;
+    private static int tileSize;
+    private static final double alertRadius = 120;      // How far enemy notices noise
+    private static final double stopDistance = 30;      // Stops right near player
+    private static final double maxChaseDistance = 110; // Gives up if player flees too far
 
-    private double targetX, targetY;
+    private static double targetX, targetY;
 
     public EnemyAI(GameMap map, int tileSize)
     {
-        this.map = map;
-        this.tileSize = tileSize;
+        EnemyAI.map = map;
+        EnemyAI.tileSize = tileSize;
     }
 
     public void update(Enemy enemy, Player player, double dt)

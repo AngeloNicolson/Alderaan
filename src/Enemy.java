@@ -18,10 +18,10 @@ public class Enemy extends Entity
     private static Image[][] hitAnimations; // [state][frame]
     private static Image[][] distanceAnimations; // [state][frame]
 
-    private int frameWidth, frameHeight;
-    private int[] framesPerState = {5, 1, 6, 3, 5}; // IDLE=5, ALERTED=1, CHASING=6, ATTACKING=3, DEAD=5 frames
+    private static int frameWidth, frameHeight;
+    private static int[] framesPerState = {5, 1, 6, 3, 5}; // IDLE=5, ALERTED=1, CHASING=6, ATTACKING=3, DEAD=5 frames
     private double frameTimer = 0;
-    private double frameDuration = 0.2;
+    private static double frameDuration = 0.2;
     private int currentFrame = 0;
     private static Map<Image, Image[]> spriteSlices = new HashMap<>();
     private static Map<Image, Image[]> distanceSlices = new HashMap<>();
@@ -39,17 +39,17 @@ public class Enemy extends Entity
     private double walkBackSpeed = 50;
 
     // Attack
-    private double attackCooldown = 2.0;
+    private static double attackCooldown = 2.0;
     private double cooldownTimer = 0;
     private double deathTimer;
-    private double hangAroundTime = 5;
+    private static double hangAroundTime = 5;
     private int damage;
     // Health
-    private int maxHealth = 100;
+    private static int maxHealth = 100;
     private int currentHealth = maxHealth;
     private boolean hit = false;
     private double hitTimer = 0;
-    Composite orig;
+    private static Composite orig;
 
     public Enemy(double x, double y, String enemyType, GameMap map, int mapS, int damage)
     {
@@ -64,12 +64,12 @@ public class Enemy extends Entity
             Enemy.hitSheet = GameEngine.loadImage("assets/visual/StormZombieSpritesheetRedTint.png");
             Enemy.distanceSheet = GameEngine.loadImage("assets/visual/StormZombieSpritesheetShadow.png");
         }
-        this.frameWidth = 432 / 6;   // 683 / 6 columns (approximate)
-        this.frameHeight = 576 / 8;  // Updated: 9 rows instead of 8
+        frameWidth = 432 / 6;   // 683 / 6 columns (approximate)
+        frameHeight = 576 / 8;  // Updated: 9 rows instead of 8
         animations = new Image[5][]; // IDLE, ALERTED, CHASING, ATTACKING, DEAD
         hitAnimations = new Image[4][];
         distanceAnimations = new Image[5][];
-        this.orig = null;
+        orig = null;
 
         // IDLE row 7 has 5 columns (directions)
         hitAnimations[0] = new Image[5];

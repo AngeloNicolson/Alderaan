@@ -202,7 +202,7 @@ public class Main extends GameEngine
                                 "High", () -> {
                                     quality = GraphicsQuality.HIGH;
                                     updateGraphicsQuality();
-                                    raycaster.setNumRays(1048);
+                                    raycaster.setNumRays(1024);
                                 });
         lowButton = new Button((startX / 2) * 3, startY, buttonWidth, buttonHeight, "Low", () -> {
             quality = GraphicsQuality.LOW;

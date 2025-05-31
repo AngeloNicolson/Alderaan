@@ -524,5 +524,4 @@ public class Enemy extends Entity
     public boolean isAlive(){
         return currentHealth > 0;
     }
-
 }

@@ -10,12 +10,18 @@ public class Weapon
     private static final int MAX_AMMO = 999;
     private int totalAmmo;
     private boolean isUnlimitedAmmo;
+    private boolean fired;
     private double fireCooldown = 0.0;
+    private double flashLength = 0.5;
+    private double flashTime = 0.0;
     private Image sprite;
+    private Image[] muzzleFlash;
+    private int flashFrame;
+    private int flashFrames;
     private GameEngine.AudioClip fireSound;
 
     public Weapon(String name, int damage, int fireRate, int magSize, int initialTotalAmmo, boolean isUnlimitedAmmo,
-                  Image sprite, GameEngine.AudioClip fireSound)
+                  Image sprite, GameEngine.AudioClip fireSound, Image fsprite, int fFrames)
     {
         this.name = name;
         this.damage = damage;
@@ -33,6 +39,11 @@ public class Weapon
             this.totalAmmo = initialTotalAmmo;
         }
         this.sprite = sprite;
+        this.flashFrames = fFrames;
+        this.muzzleFlash = new Image[flashFrames];
+        for (int i = 0; i < flashFrames; i ++) {
+            muzzleFlash[i] = GameEngine.subImage(fsprite,  128  * i, 0, 128, 128);
+        }
         this.fireSound = fireSound;
     }
 
@@ -41,6 +52,15 @@ public class Weapon
         if (fireCooldown > 0.0)
         {
             fireCooldown -= dt;
+        }
+        if (fired) {
+            flashTime += dt;
+            flashFrame = (int)Math.floor(flashTime / 0.1);
+            if (flashFrame >= flashFrames) {
+                flashFrame = 0;
+                flashTime = 0;
+                fired = false;
+            }
         }
     }
 
@@ -52,7 +72,8 @@ public class Weapon
             {
                 currentMag--;
             }
-            fireCooldown = 1.0 / fireRate; // Reset cooldown based on fire rate
+            fireCooldown = 1.0 / fireRate;
+            fired = true;// Reset cooldown based on fire rate
             return true;
         }
         return false;
@@ -94,6 +115,18 @@ public class Weapon
     {
         return damage;
     }
+    public void setFired(boolean f) {
+        fired = f;
+    }
+
+    public Image getFlashFrame() {
+        return  muzzleFlash[flashFrame];
+    }
+
+    public boolean getFired() {
+        return fired;
+    }
+
     public int getCurrentMagAmmo()
     {
         return currentMag;

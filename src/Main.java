@@ -171,6 +171,7 @@ public class Main extends GameEngine
 
     @Override public void init()
     {
+        this.gameAsset = new GameAsset();
         currentState = GameState.MAIN_MENU;
         menuBackground = loadImage("assets/visual/menuWallpaper.png");
         gameOverBackground = loadImage("assets/visual/gameOverScreen.png");

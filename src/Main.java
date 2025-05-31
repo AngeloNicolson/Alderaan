@@ -379,6 +379,7 @@ public class Main extends GameEngine
             double verticalLookOffset = player.getVerticalLookOffset();
 
             raycaster.draw(this, playerX, playerY, playerAngle, verticalLookOffset);
+            player.draw(this);
 
             // --- MINIMAP OVERLAY ---
             final int MINI_MAP_SIZE = 128;

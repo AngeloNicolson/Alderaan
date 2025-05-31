@@ -141,8 +141,6 @@ public class Player extends Entity
 
     public void draw(GameEngine engine)
     {
-        engine.changeColor(engine.red);
-        engine.drawSolidCircle(x, y, 3); // Draw player as a small red circle
 
         double lineLength = 20;
         // Calculate the end point of the direction line based on player's angle
@@ -151,6 +149,15 @@ public class Player extends Entity
 
         // Draw direction line from player's center
         engine.drawLine(x, y, endX, endY);
+
+        // Draw crosshair
+        engine.changeColor(engine.white);
+        int centerX = engine.width() / 2;
+        int centerY = engine.height() / 2;
+        int crosshairSize = 10; // Adjust the size as needed
+
+        engine.drawLine(centerX - crosshairSize, centerY, centerX + crosshairSize, centerY);
+        engine.drawLine(centerX, centerY - crosshairSize, centerX, centerY + crosshairSize);
     }
 
     private boolean isWall(double px, double py)
@@ -161,7 +168,7 @@ public class Player extends Entity
         return map.isWall(tileX, tileY);
 
         // if (tileX < 0 || tileY < 0 || tileX >= map.getWidth() || tileY >= map.getHeight())
-        //     return true;
+        //  return true;
 
         // return map.getGrid()[tileY][tileX] >= 1 && map.getGrid()[tileY][tileX] < 9;
     }

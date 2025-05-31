@@ -373,7 +373,7 @@ public class Enemy extends Entity
                 hitSpriteSlices.put(hitFrame, hitSlices);
             }
         }
-        if (hitSlices == null && hit)
+        if (hitSlices == null && hit && hitFrame != null)
         {
             hitSlices = new Image[frameW];
             for (int i = 0; i < frameW; i++)

@@ -82,6 +82,7 @@ public class Main extends GameEngine
     private static final AudioClip soundZombieDeath = loadAudio("assets/audio/SoundZombieDeath.wav");
     private static final AudioClip soundZombieNeutral = loadAudio("assets/audio/SoundZombieNeutral.wav");
     private static final AudioClip soundPickupItem = loadAudio("assets/audio/SoundPickupItem.wav");
+    private static final AudioClip soundEmptyMagClick = loadAudio("assets/audio/SoundEmptyMagClick.wav");
     
     // Gameplay related variables
     private double weaponX = 400;
@@ -382,10 +383,10 @@ public class Main extends GameEngine
             drawImage(menuBackground, 0, 0, width, height);
             drawImage(gameAsset.getEscapePodSprite(), escapePodX, escapePodY, 3, -5); // draw the escape pod
             changeColor(white);
-            drawCenteredText( 100, "You have successfully escaped.", "Arial", 40, Font.BOLD);
+            drawCenteredText( 100, "You escaped the Alderaan.", "Arial", 40, Font.BOLD);
             drawCenteredText( height-50, "Press ENTER to return to main menu.", "Arial", 14,Font.PLAIN);
             if (displayEnd) {
-                drawCenteredText( 150, "Then you look to the nasty looking gash on your arm...", "Arial", 20, Font.BOLD);
+                drawCenteredText( 150, "Then you look down and notice an infected gash on your arm...", "Arial", 20, Font.BOLD);
             }
             restoreLastTransform();
         }
@@ -902,7 +903,7 @@ public class Main extends GameEngine
         else if (currentState == GameState.PLAYING && e.getButton() == MouseEvent.BUTTON1)
         {
             Weapon currentWeapon = player.getCurrentWeapon();
-            if (player.getCurrentWeapon().tryFire())
+            if (currentWeapon.tryFire())
             {
                 if (currentWeapon.getFireSound() != null)
                 {
@@ -943,6 +944,8 @@ public class Main extends GameEngine
                         playAudio(soundZombieDeath);
                     }
                 }
+            } else if (currentWeapon.getCurrentMagAmmo() == 0) {
+                playAudio(soundEmptyMagClick);
             }
         }
     }

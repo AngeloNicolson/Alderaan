@@ -1082,7 +1082,7 @@ public class Main extends GameEngine
             int[] tile = availableTiles.remove(index);
             double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
             double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
-            Weapon lazerRifle = new Weapon("Laser Rifle", rifleDamage, 10, 30, 90, false, lazerRifleSprite, soundLazer2,
+            Weapon lazerRifle = new Weapon("Laser Rifle", rifleDamage, 10, 30, 90, false, lazerRifleSprite, soundLazer3,
                                            loadImage("assets/visual/LazerRifleFlare.png"), 2);
             weaponItems.add(new WeaponItem(wx, wy, lazerRiflePickup, lazerRifle));
         }
@@ -1095,7 +1095,7 @@ public class Main extends GameEngine
             double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
             double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
             Weapon lazerShotgun = new Weapon("Laser Shotgun", shotgunDamage, 2, 8, 24, false, lazerShotgunSprite,
-                                             soundLazer3, loadImage("assets/visual/LazerShotGunFlare.png"), 4);
+                                             soundLazer2, loadImage("assets/visual/LazerShotGunFlare.png"), 4);
             weaponItems.add(new WeaponItem(wx, wy, lazerShotgunPickup, lazerShotgun));
         }
         left = false;

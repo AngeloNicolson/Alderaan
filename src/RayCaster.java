@@ -143,7 +143,11 @@ public class RayCaster
     // verticalLookOffset moves view UP or DOWN by shifting drawn walls vertically
     public void draw(GameEngine ge, double px, double py, double playerAngle, double verticalLookOffset)
     {
+        // Cast all rays before drawing
         castRays(px, py, playerAngle);
+
+        ge.drawSolidRectangle(0, 0, ge.width(), ge.height() / 2);               // Ceiling
+        ge.drawSolidRectangle(0, ge.height() / 2, ge.width(), ge.height() / 2); // Floor
 
         double stripWidth = (double)ge.width() / numRays;
 
@@ -160,18 +164,15 @@ public class RayCaster
             if (lineHeight > maxLineHeight)
                 lineHeight = maxLineHeight;
 
-            // This is the key to pushing the view up/down:
             double yOffset = (ge.height() - lineHeight) / 2 - verticalLookOffset;
 
             ge.drawImage(imageWallSegment[i], i * stripWidth, yOffset, stripWidth, lineHeight);
 
-            // Draw shading overlay for depth effect
+            // Depth shading
             double maxDistance = 200;
             double brightness = Math.max(0.1, 1.0 - dist / maxDistance);
-            int shade = (int)(brightness * 255);
-            shade = 255 - shade;
+            int shade = 255 - (int)(brightness * 255);
             ge.changeColor(new Color(0, 0, 0, shade));
-
             ge.drawSolidRectangle(i * stripWidth, yOffset - 1, stripWidth, lineHeight + 1);
         }
     }

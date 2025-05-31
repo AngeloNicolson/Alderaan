@@ -141,16 +141,27 @@ public class Player extends Entity
 
     public void draw(GameEngine engine)
     {
-        engine.changeColor(engine.red);
-        engine.drawSolidCircle(x, y, 3); // Draw player as a small red circle
+        // TODO: Silencing this for now. I doubt we will need it again. but will wait before deleting
+        //  double lineLength = 7;
+        //   Calculate the end point of the direction line based on player's angle
+        //   double endX = x + Math.cos(angle) * lineLength;
+        //   double endY = y + Math.sin(angle) * lineLength;
+        // engine.drawLine(x, y, endX, endY);
 
-        double lineLength = 20;
-        // Calculate the end point of the direction line based on player's angle
-        double endX = x + Math.cos(angle) * lineLength;
-        double endY = y + Math.sin(angle) * lineLength;
+        // Draw crosshair with gap in the center
+        engine.changeColor(engine.white);
+        int centerX = engine.width() / 2;
+        int centerY = engine.height() / 2;
+        int crosshairLength = 7; // length of each arm
+        int gapSize = 4;         // size of the crosshair gap
 
-        // Draw direction line from player's center
-        engine.drawLine(x, y, endX, endY);
+        // Horizontal lines (left and right of center)
+        engine.drawLine(centerX - gapSize - crosshairLength, centerY, centerX - gapSize, centerY);
+        engine.drawLine(centerX + gapSize, centerY, centerX + gapSize + crosshairLength, centerY);
+
+        // Vertical lines (above and below center)
+        engine.drawLine(centerX, centerY - gapSize - crosshairLength, centerX, centerY - gapSize);
+        engine.drawLine(centerX, centerY + gapSize, centerX, centerY + gapSize + crosshairLength);
     }
 
     private boolean isWall(double px, double py)
@@ -161,7 +172,7 @@ public class Player extends Entity
         return map.isWall(tileX, tileY);
 
         // if (tileX < 0 || tileY < 0 || tileX >= map.getWidth() || tileY >= map.getHeight())
-        //     return true;
+        //  return true;
 
         // return map.getGrid()[tileY][tileX] >= 1 && map.getGrid()[tileY][tileX] < 9;
     }

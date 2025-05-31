@@ -526,6 +526,8 @@ public class Main extends GameEngine
             {
                 enemy.drawOnMinimap(this, player);
             }
+            // Leave here so crosshair is drawn over everything
+            player.draw(this);
         }
         else if (currentState == GameState.GAME_OVER)
         {

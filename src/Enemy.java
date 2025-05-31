@@ -25,7 +25,7 @@ public class Enemy extends Entity
     private int currentFrame = 0;
     private static Map<Image, Image[]> spriteSlices = new HashMap<>();
     private static Map<Image, Image[]> distanceSlices = new HashMap<>();
-    private static double maxDistance = 200;
+    private static double maxDistance = 400;
 
     // Speed - AI
     private double speed = 50;

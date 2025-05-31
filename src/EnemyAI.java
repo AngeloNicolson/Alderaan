@@ -6,9 +6,9 @@ public class EnemyAI
         ALERTED,    // ORDINAL 1 - Possibly heard the player or sensed presence
         CHASING,    // ORDINAL 2 - Has seen the player and is pursuing
         ATTACKING,  // ORDINAL 3 - In attacking range
-        RETREATING, // ORDINAL 4 - Retreating because player too close
-        DEAD        // ORDINAL 5
-    }
+        DEAD,      // ORDINAL 4
+        RETREATING, // ORDINAL 5 - Retreating because player too close
+        }
 
     private AIState state = AIState.IDLE; // Initial state
     private GameMap map;

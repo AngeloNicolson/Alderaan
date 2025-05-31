@@ -205,7 +205,7 @@ public class Enemy extends Entity
         }
 
         int stateIndex = newState.ordinal();
-        if (framesPerState[stateIndex] > 1)
+        if (stateIndex < 5 && framesPerState[stateIndex] > 1)
         {
             frameTimer += dt;
             if (frameTimer >= frameDuration)

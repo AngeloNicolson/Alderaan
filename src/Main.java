@@ -467,13 +467,22 @@ public class Main extends GameEngine
             Weapon currentWeapon = player.getCurrentWeapon();
             if (currentWeapon.getSprite() != null)
             {
-                if (currentWeapon.getFired()) {
-                    if (Objects.equals(currentWeapon.getName(), "Laser Rifle")) {
-                        drawImage(currentWeapon.getFlashFrame(), weaponX - (21 * 3.125), weaponY - (47 * 3.125), 400, 400);
-                    }else if (Objects.equals(currentWeapon.getName(), "Laser ShotGun")) {
-                        drawImage(currentWeapon.getFlashFrame(), weaponX - (21 * 3.125), weaponY - (53 * 3.125), 400, 400);
-                    }else {
-                        drawImage(currentWeapon.getFlashFrame(), weaponX - (19 * 3.125), weaponY - (54 * 3.125), 400, 400);
+                if (currentWeapon.getFired())
+                {
+                    if (Objects.equals(currentWeapon.getName(), "Laser Rifle"))
+                    {
+                        drawImage(currentWeapon.getFlashFrame(), weaponX - (21 * 3.125), weaponY - (47 * 3.125), 400,
+                                  400);
+                    }
+                    else if (Objects.equals(currentWeapon.getName(), "Laser ShotGun"))
+                    {
+                        drawImage(currentWeapon.getFlashFrame(), weaponX - (21 * 3.125), weaponY - (53 * 3.125), 400,
+                                  400);
+                    }
+                    else
+                    {
+                        drawImage(currentWeapon.getFlashFrame(), weaponX - (19 * 3.125), weaponY - (54 * 3.125), 400,
+                                  400);
                     }
                 }
                 drawImage(currentWeapon.getSprite(), weaponX, weaponY, 400, 400);
@@ -1048,8 +1057,8 @@ public class Main extends GameEngine
             int[] tile = availableTiles.remove(index);
             double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
             double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
-            Weapon lazerRifle =
-                new Weapon("Laser Rifle", rifleDamage, 10, 30, 90, false, lazerRifleSprite, soundLazer2, loadImage("assets/visual/LazerRifleFlare.png"), 2);
+            Weapon lazerRifle = new Weapon("Laser Rifle", rifleDamage, 10, 30, 90, false, lazerRifleSprite, soundLazer2,
+                                           loadImage("assets/visual/LazerRifleFlare.png"), 2);
             weaponItems.add(new WeaponItem(wx, wy, lazerRiflePickup, lazerRifle));
         }
 
@@ -1060,8 +1069,8 @@ public class Main extends GameEngine
             int[] tile = availableTiles.remove(index);
             double wx = tile[0] * TILE_SIZE + TILE_SIZE / 2.0;
             double wy = tile[1] * TILE_SIZE + TILE_SIZE / 2.0;
-            Weapon lazerShotgun =
-                new Weapon("Laser Shotgun", shotgunDamage, 2, 8, 24, false, lazerShotgunSprite, soundLazer3, loadImage("assets/visual/LazerShotGunFlare.png"), 4);
+            Weapon lazerShotgun = new Weapon("Laser Shotgun", shotgunDamage, 2, 8, 24, false, lazerShotgunSprite,
+                                             soundLazer3, loadImage("assets/visual/LazerShotGunFlare.png"), 4);
             weaponItems.add(new WeaponItem(wx, wy, lazerShotgunPickup, lazerShotgun));
         }
     }
@@ -1085,8 +1094,8 @@ public class Main extends GameEngine
         }
         Image laserPistolSprite = gameAsset.getLazerPistol();
         AudioClip laserPistolSound = soundLazer1;
-        Weapon laserPistol =
-            new Weapon("Laser Pistol", pistolDamage, 5, 10, 0, true, laserPistolSprite, laserPistolSound, loadImage("assets/visual/LazerPistolFlare.png"), 3);
+        Weapon laserPistol = new Weapon("Laser Pistol", pistolDamage, 5, 10, 0, true, laserPistolSprite,
+                                        laserPistolSound, loadImage("assets/visual/LazerPistolFlare.png"), 3);
         List<Weapon> weapons = new ArrayList<>();
         weapons.add(laserPistol);
         return weapons;

@@ -2,11 +2,12 @@ public class EnemyAI
 {
     public enum AIState
     {
-        IDLE,      // ORDINAL 0 - Not aware of the player
-        ALERTED,   // ORDINAL 1 - Possibly heard the player or sensed presence
-        CHASING,   // ORDINAL 2 - Has seen the player and is pursuing
-        ATTACKING, // ORDINAL 3 - In attacking range
-        DEAD       // ORDINAL 4
+        IDLE,       // ORDINAL 0 - Not aware of the player
+        ALERTED,    // ORDINAL 1 - Possibly heard the player or sensed presence
+        CHASING,    // ORDINAL 2 - Has seen the player and is pursuing
+        ATTACKING,  // ORDINAL 3 - In attacking range
+        RETREATING, // ORDINAL 4 - Retreating because player too close
+        DEAD        // ORDINAL 5
     }
 
     private AIState state = AIState.IDLE; // Initial state
@@ -15,6 +16,8 @@ public class EnemyAI
     private double alertRadius = 120;      // How far enemy notices noise
     private double stopDistance = 30;      // Stops right near player
     private double maxChaseDistance = 110; // Gives up if player flees too far
+    private double retreatDistance = 20;   // player closer than this triggers retreat
+    private double retreatSpeed = 70;      // pixels per second for retreating
 
     private double targetX, targetY;
 
@@ -35,8 +38,6 @@ public class EnemyAI
         case IDLE:
             targetX = enemy.getX();
             targetY = enemy.getY();
-            // In IDLE, the enemy's angle is not explicitly set here;
-            // The render method will make it appear to look towards the player if close enough.
             if (dist < alertRadius)
             {
                 state = AIState.ALERTED;
@@ -46,17 +47,15 @@ public class EnemyAI
         case ALERTED:
             targetX = enemy.getX();
             targetY = enemy.getY();
-            // In ALERTED, the enemy is static.
             if (canSeePlayer(enemy.getX(), enemy.getY(), player.getX(), player.getY()))
             {
                 state = AIState.CHASING;
-                // When transitioning to CHASING, immediately face the player
-                enemy.facePlayer(player); // Ensure correct initial facing for movement
+                enemy.facePlayer(player);
             }
             else if (dist > alertRadius * 1.5)
             {
-                state = AIState.IDLE;     // Player moved away
-                enemy.facePlayer(player); // Ensure correct initial facing for movement
+                state = AIState.IDLE;
+                enemy.facePlayer(player);
             }
             break;
 
@@ -64,11 +63,15 @@ public class EnemyAI
             targetX = player.getX();
             targetY = player.getY();
 
-            // Check if enemy can still see the player (no walls blocking)
             if (!canSeePlayer(enemy.getX(), enemy.getY(), player.getX(), player.getY()))
             {
-                // Lost sight — switch back to IDLE
                 state = AIState.IDLE;
+                break;
+            }
+
+            if (dist < retreatDistance)
+            {
+                state = AIState.RETREATING;
                 break;
             }
 
@@ -81,28 +84,78 @@ public class EnemyAI
                 state = AIState.ATTACKING;
             }
 
-            enemy.smoothFacePlayer(player, Math.PI * 2, dt); // turn speed = 2 pi a second
+            enemy.smoothFacePlayer(player, Math.PI * 2, dt);
 
             if (dist > maxChaseDistance)
             {
                 state = AIState.IDLE;
             }
             break;
+
+        case RETREATING:
+            // Calculate direction away from player
+            double dirX = enemy.getX() - player.getX();
+            double dirY = enemy.getY() - player.getY();
+            double len2 = dirX * dirX + dirY * dirY;
+
+            if (len2 > 0.001)
+            {
+                double len = Math.sqrt(len2);
+                dirX /= len;
+                dirY /= len;
+
+                double moveX = dirX * retreatSpeed * dt;
+                double moveY = dirY * retreatSpeed * dt;
+
+                double newX = enemy.getX() + moveX;
+                double newY = enemy.getY() + moveY;
+
+                int tileX = (int)(newX / tileSize);
+                int tileY = (int)(newY / tileSize);
+                if (map.isWalkableTile(tileX, tileY))
+                {
+                    enemy.setX(newX);
+                    enemy.setY(newY);
+                }
+            }
+
+            enemy.smoothFacePlayer(player, Math.PI * 2, dt);
+
+            // Recalculate distance after move
+            double retreatDist = Math.sqrt((player.getX() - enemy.getX()) * (player.getX() - enemy.getX()) +
+                                           (player.getY() - enemy.getY()) * (player.getY() - enemy.getY()));
+
+            if (retreatDist > 30) // safe distance reached
+            {
+                state = AIState.ATTACKING;
+            }
+            break;
+
         case ATTACKING:
+            if (dist < retreatDistance)
+            {
+                state = AIState.RETREATING;
+                break;
+            }
+
             if (dist > stopDistance)
             {
                 state = AIState.CHASING;
             }
+
             enemy.smoothFacePlayer(player, Math.PI * 2, dt);
             break;
+
         case DEAD:
             break;
+
         default:
             state = AIState.IDLE;
             targetX = enemy.getX();
             targetY = enemy.getY();
             break;
         }
+
         if (!enemy.isAlive())
         {
             state = AIState.DEAD;
@@ -135,7 +188,6 @@ public class EnemyAI
 
         int playerTileX = (int)(px / tileSize);
         int playerTileY = (int)(py / tileSize);
-        // Ensure the player's tile itself is walkable if the ray reaches it
         if (!map.isWalkableTile(playerTileX, playerTileY))
             return false;
 

@@ -940,12 +940,12 @@ public class Main extends GameEngine
                             if (angleDiff + angleTolerance < SHOTGUNANGLE /2) {
                                 overlap = (angleTolerance * 2);
                             }else {
-                                System.out.println("yes");
+                                //System.out.println("yes");
                                 overlap = ((SHOTGUNANGLE / 2) - (angleDiff - angleTolerance)) * 2;
                             }
                             damage = (int)(damage * (overlap / SHOTGUNANGLE));
                             if (distance < minDistance && distance < wallDistance) {
-                                System.out.println("Damage: " + damage  + " Overlap: " + overlap);
+                                //System.out.println("Damage: " + damage  + " Overlap: " + overlap);
                                 minDistance = distance;
                                 hitEnemies.add(enemy);
                                 damages.add(damage);

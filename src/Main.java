@@ -56,6 +56,7 @@ public class Main extends GameEngine
     private Difficulty difficulty = Difficulty.NORMAL;
     private GraphicsQuality quality = GraphicsQuality.LOW;
     private static final double ENEMYWIDTH = 3.23;
+    private static final double SHOTGUNANGLE = Math.toRadians(15);
 
     // Window size
     private int width = 1024;
@@ -911,6 +912,7 @@ public class Main extends GameEngine
             Weapon currentWeapon = player.getCurrentWeapon();
             if (currentWeapon.tryFire())
             {
+                int damage = currentWeapon.getDamage();
                 if (currentWeapon.getFireSound() != null)
                 {
                     playAudio(currentWeapon.getFireSound());
@@ -919,7 +921,9 @@ public class Main extends GameEngine
                 // Shooting logic
                 int centralRayIndex = raycaster.getNumRays() / 2; // with numRays being 1024
                 double wallDistance = raycaster.getRayDistances(centralRayIndex);
-                Enemy hitEnemy = null;
+                ArrayList<Enemy> hitEnemies = new ArrayList<Enemy>();
+                ArrayList<Integer> damages = new ArrayList<Integer>();
+                int hitCount = 0;
                 double minDistance = Double.MAX_VALUE;
                 double playerAngle = player.getAngle();
                 for (Enemy enemy : enemies)
@@ -929,26 +933,44 @@ public class Main extends GameEngine
                     double enemyAngle = Math.atan2(dy, dx);
                     double distance = Math.sqrt(dx * dx + dy * dy);
                     double angleTolerance = Math.atan2(ENEMYWIDTH , distance); // aiming tolerance = 1 degree
-                    double angleDiff = normalizeAngle(enemyAngle - playerAngle);
-                    if (Math.abs(angleDiff) < angleTolerance)
-                    {
-                        if (distance < minDistance && distance < wallDistance)
-                        {
-                            System.out.println(distance);
+                    double angleDiff = Math.abs(normalizeAngle(enemyAngle - playerAngle));
+                    if (Objects.equals(currentWeapon.getName(), "Laser Shotgun")) {
+                        if (((angleDiff - angleTolerance) < (SHOTGUNANGLE / 2))) {
+                            double overlap;
+                            if (angleDiff + angleTolerance < SHOTGUNANGLE /2) {
+                                overlap = (angleTolerance * 2);
+                            }else {
+                                System.out.println("yes");
+                                overlap = ((SHOTGUNANGLE / 2) - (angleDiff - angleTolerance)) * 2;
+                            }
+                            damage = (int)(damage * (overlap / SHOTGUNANGLE));
+                            if (distance < minDistance && distance < wallDistance) {
+                                System.out.println("Damage: " + damage  + " Overlap: " + overlap);
+                                minDistance = distance;
+                                hitEnemies.add(enemy);
+                                damages.add(damage);
+                                hitCount ++;
+                            }
+                            damage = currentWeapon.getDamage();
+                        }
+                    }else if (angleDiff < angleTolerance) {
+                        if (distance < minDistance && distance < wallDistance) {
                             minDistance = distance;
-                            hitEnemy = enemy;
+                            hitEnemies.add(enemy);
+                            damages.add(damage);
+                            hitCount ++;
                         }
                     }
                 }
 
-                if (hitEnemy != null)
+                if (!hitEnemies.isEmpty())
                 {
-                    int damage = currentWeapon.getDamage();
-                    hitEnemy.takeDamage(damage);
-                    playAudio(soundLazerHit);
-                    if (!hitEnemy.isAlive())
-                    {
-                        playAudio(soundZombieDeath);
+                    for (int i =0; i < hitCount; i ++) {
+                        hitEnemies.get(i).takeDamage(damages.get(i));
+                        playAudio(soundLazerHit);
+                        if (!hitEnemies.get(i).isAlive()) {
+                            playAudio(soundZombieDeath);
+                        }
                     }
                 }
             } else if (currentWeapon.getCurrentMagAmmo() == 0) {
@@ -1120,15 +1142,15 @@ public class Main extends GameEngine
         {
         case EASY:
             rifleDamage = 20;
-            shotgunDamage = 30;
+            shotgunDamage = 100;
             break;
         case NORMAL:
             rifleDamage = 15;
-            shotgunDamage = 25;
+            shotgunDamage = 80;
             break;
         case HARD:
             rifleDamage = 10;
-            shotgunDamage = 20;
+            shotgunDamage = 60;
             break;
         default:
             rifleDamage = 15;

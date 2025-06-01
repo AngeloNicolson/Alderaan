@@ -1,3 +1,8 @@
+//Angelo Nicolson, 24010970
+//Joshua Sim, 22004867
+//Kale Twist, 23009939
+//Johnny Chadwick-Watt, 23003660
+
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -50,6 +55,7 @@ public class Main extends GameEngine
     private int currentLevel;
     private Difficulty difficulty = Difficulty.NORMAL;
     private GraphicsQuality quality = GraphicsQuality.LOW;
+    private static final double ENEMYWIDTH = 3.23;
 
     // Window size
     private int width = 1024;
@@ -913,7 +919,6 @@ public class Main extends GameEngine
                 // Shooting logic
                 int centralRayIndex = raycaster.getNumRays() / 2; // with numRays being 1024
                 double wallDistance = raycaster.getRayDistances(centralRayIndex);
-                double angleTolerance = Math.toRadians(1); // aiming tolerance = 1 degree
                 Enemy hitEnemy = null;
                 double minDistance = Double.MAX_VALUE;
                 double playerAngle = player.getAngle();
@@ -922,12 +927,14 @@ public class Main extends GameEngine
                     double dx = enemy.getX() - player.getX();
                     double dy = enemy.getY() - player.getY();
                     double enemyAngle = Math.atan2(dy, dx);
+                    double distance = Math.sqrt(dx * dx + dy * dy);
+                    double angleTolerance = Math.atan2(ENEMYWIDTH , distance); // aiming tolerance = 1 degree
                     double angleDiff = normalizeAngle(enemyAngle - playerAngle);
                     if (Math.abs(angleDiff) < angleTolerance)
                     {
-                        double distance = Math.sqrt(dx * dx + dy * dy);
                         if (distance < minDistance && distance < wallDistance)
                         {
+                            System.out.println(distance);
                             minDistance = distance;
                             hitEnemy = enemy;
                         }
